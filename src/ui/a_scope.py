@@ -56,6 +56,10 @@ class AScope(QWidget):
         self._cfar_reference_cells = 8
         self._hover_range_idx = -1  # Current hover index
 
+        # Phase 28: Jamming state
+        self._jamming_active = False
+        self._jsr_db = 0.0
+
         self._setup_ui()
 
     def _setup_ui(self):
@@ -142,6 +146,20 @@ class AScope(QWidget):
             brush=pg.mkBrush(0, 255, 100, 200),
         )
         self.plot_widget.addItem(self.signal_scatter)
+
+        # ═══ PHASE 28: Jamming Noise Strobe ═══
+        self.jam_noise_curve = pg.PlotCurveItem(
+            pen=pg.mkPen(color=(255, 80, 0, 160), width=2)
+        )
+        self.plot_widget.addItem(self.jam_noise_curve)
+
+        self.jam_fill = pg.FillBetweenItem(
+            self.noise_curve, self.jam_noise_curve,
+            brush=pg.mkBrush(255, 50, 0, 40)
+        )
+        self.plot_widget.addItem(self.jam_fill)
+        self.jam_noise_curve.setVisible(False)
+        self.jam_fill.setVisible(False)
 
         # ═══ PHASE 23: CFAR CELL VISUALIZATION ═══
         # Cell Under Test (CUT) marker
@@ -281,6 +299,7 @@ class AScope(QWidget):
         self._update_noise_floor()
         self._update_threshold()
         self._update_targets()
+        self._update_jamming_overlay(state)
 
     def _update_noise_floor(self):
         """Update noise floor curve."""
@@ -332,3 +351,35 @@ class AScope(QWidget):
             self.signal_scatter.setData(ranges, snrs, brush=brushes)
         else:
             self.signal_scatter.setData([], [])
+
+    def _update_jamming_overlay(self, state: dict) -> None:
+        """
+        Update jamming noise strobe visualization.
+
+        When jamming is active, elevates the noise floor and adds
+        random noise artifacts across the range axis.
+
+        Reference: Schleher (1999), Ch. 4
+        """
+        eccm_data = state.get("eccm", {})
+        jamming_active = eccm_data.get("jamming_active", False)
+        jsr_db = eccm_data.get("effective_jsr_db", 0.0)
+
+        if not jamming_active or jsr_db < 0:
+            self.jam_noise_curve.setVisible(False)
+            self.jam_fill.setVisible(False)
+            return
+
+        n_points = 200
+        ranges = np.linspace(0.1, self.max_range_km, n_points)
+
+        # Elevated noise floor proportional to J/S
+        elevation = min(30, max(0, jsr_db - 5))
+        jam_noise = (
+            -10 + elevation
+            + np.random.exponential(scale=max(1, jsr_db / 5), size=n_points)
+        )
+
+        self.jam_noise_curve.setData(ranges, jam_noise)
+        self.jam_noise_curve.setVisible(True)
+        self.jam_fill.setVisible(True)

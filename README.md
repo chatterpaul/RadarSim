@@ -6,7 +6,7 @@
 
 <p align="center">
   <b>Professional Pulse-Doppler Radar Simulation Platform</b><br>
-  <i>Physics-Based • AI-Enhanced • Open Source</i>
+  <i>Physics-Based • AI-Enhanced • Imaging Radar • Open Source</i>
 </p>
 
 <p align="center">
@@ -21,7 +21,8 @@
   <img src="https://img.shields.io/badge/python-3.10%2B-blue?style=flat-square" alt="Python 3.10+"/>
   <img src="https://img.shields.io/badge/PyQt6-6.0%2B-orange?style=flat-square" alt="PyQt6"/>
   <img src="https://img.shields.io/badge/license-MIT-green?style=flat-square" alt="MIT License"/>
-  <img src="https://img.shields.io/badge/version-1.0.0-gold?style=flat-square" alt="v1.0.0"/>
+  <img src="https://img.shields.io/badge/version-2.4.0-gold?style=flat-square" alt="v2.4.0"/>
+  <img src="https://img.shields.io/badge/tests-217%20passed-brightgreen?style=flat-square" alt="217 tests"/>
 </p>
 
 ---
@@ -62,8 +63,24 @@
 | Noise Jamming | ECM | ✅ |
 | DRFM Repeater | ECM | ✅ |
 | RGPO/VGPO Deception | ECM | ✅ |
-| **Frequency Agility** | ECCM | ✅ New |
-| **Burn-Through Display** | ECM Strobe | ✅ New |
+| **Frequency Agility** | ECCM | ✅ |
+| **Burn-Through Display** | ECM Strobe | ✅ |
+
+### 🛰️ Imaging Radar (Phase 30)
+| Feature | Implementation | Reference |
+|---------|----------------|-----------|
+| **SAR (RDA)** | Vectorized 5-stage Range-Doppler Algorithm | Cumming & Wong (2005) |
+| **ISAR** | Cross-range imaging via target rotation | Chen & Ling (2002) |
+| **Resolution** | Δr = c/(2B) = 1.5m, Δa = D/2 = 0.5m | Verified |
+
+### 🤖 AI Tactical Director (Phase 30)
+| Feature | Description |
+|---------|-------------|
+| **Coverage Analysis** | 2D Pd map from multi-radar network |
+| **Blind Zone Detection** | Flood-fill connected component analysis |
+| **Attack Planning** | 3 difficulty levels (Easy/Medium/Hard) |
+| **Low-Pd Routing** | Greedy corridor navigation |
+| **Jammer Deployment** | Optimal DRFM positioning |
 
 ### 📊 Visualization Scopes
 | Scope | Description |
@@ -154,23 +171,26 @@ python run_gui.py
 
 ```
 RadarSim/
-├── run_gui.py              # Main entry point
+├── run_gui.py              # Main entry point (PyQt6 GUI)
+├── headless.py             # Headless simulation runner
+├── batch_run.py            # Batch scenario executor
 ├── requirements.txt        # Dependencies
-├── scenarios/              # YAML scenario files
-│   ├── air_defense.yaml
-│   ├── coastal.yaml
+├── scenarios/              # YAML scenario files (10 scenarios)
+│   ├── f16_vs_sa6.yaml
+│   ├── drone_swarm_saturation.yaml
+│   ├── naval_battlegroup.yaml
 │   └── ...
 ├── src/
 │   ├── physics/            # Core physics (radar_equation, clutter, ecm)
-│   ├── signal/             # Signal processing (cfar, doppler, sar)
-│   ├── tracking/           # Target tracking (kalman, monopulse)
-│   ├── simulation/         # Simulation engine
-│   ├── ui/                 # PyQt6 GUI components
-│   ├── advanced/           # SAR/ISAR, Sensor Fusion, LPI
+│   ├── signal/             # Signal processing (cfar, pulse_doppler, antenna)
+│   ├── tracking/           # Target tracking (EKF, monopulse, track manager)
+│   ├── simulation/         # Simulation engine & network manager
+│   ├── ui/                 # PyQt6 GUI (PPI, B-Scope, RHI, A-Scope, 3D)
+│   ├── advanced/           # SAR/ISAR, AI Director, Sensor Fusion, ECCM, LPI
 │   └── ml/                 # AI classification pipeline
 ├── models/                 # Trained ML models
 ├── docs/                   # Documentation
-└── tests/                  # Unit tests
+└── tests/                  # 217 unit tests
 ```
 
 ---
@@ -187,11 +207,16 @@ RadarSim/
 
 ## 🔬 Scientific References
 
-1. **Skolnik, M.I.** - *Radar Handbook*, 3rd Ed., McGraw-Hill, 2008
-2. **Richards, M.A.** - *Fundamentals of Radar Signal Processing*, 2nd Ed., McGraw-Hill, 2014
-3. **IEEE Std 686-2017** - Radar Definitions
-4. **ITU-R P.676-12** - Attenuation by Atmospheric Gases
-5. **Cumming & Wong** - *Digital Processing of SAR Data*, Artech House, 2005
+1. **Skolnik, M.I.** — *Radar Handbook*, 3rd Ed., McGraw-Hill, 2008
+2. **Richards, M.A.** — *Fundamentals of Radar Signal Processing*, 2nd Ed., McGraw-Hill, 2014
+3. **IEEE Std 686-2017** — Radar Definitions
+4. **ITU-R P.676-12** — Attenuation by Atmospheric Gases
+5. **Cumming & Wong** — *Digital Processing of SAR Data*, Artech House, 2005
+6. **Chen & Ling** — *Time-Frequency Transforms for Radar Imaging*, Artech House, 2002
+7. **Bar-Shalom, Y.** — *Estimation with Applications to Tracking*, Wiley, 2001
+8. **Julier & Uhlmann** — *Non-divergent Estimation Algorithm*, ACC, 1997
+9. **Schleher, D.C.** — *Electronic Warfare in the Information Age*, Artech House, 1999
+10. **Poisel, R.** — *Electronic Warfare Target Location Methods*, Artech House, 2012
 
 ---
 

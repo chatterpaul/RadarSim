@@ -60,6 +60,16 @@ except ImportError:
     INFERENCE_AVAILABLE = False
     InferenceEngine = None
 
+# Pulse-Doppler Processing (Phase 26)
+try:
+    from src.signal.pulse_doppler import PulseDopplerProcessor, RangeDopplerMap
+
+    PULSE_DOPPLER_AVAILABLE = True
+except ImportError:
+    PULSE_DOPPLER_AVAILABLE = False
+    PulseDopplerProcessor = None
+    RangeDopplerMap = None
+
 
 @dataclass
 class DetectionResult:
@@ -288,7 +298,6 @@ class SimulationEngine:
         # ═══ PHASE 19: CLUTTER, MTI & ECCM STATE ═══
         # Clutter: Adds environmental noise (ground/sea clutter)
         self.clutter_enabled = False
-        self.clutter_enabled = False
         self.terrain_type = (
             "rural"  # 'urban', 'suburban', 'rural', 'forest', 'desert', 'mountains', 'sea'
         )
@@ -320,10 +329,116 @@ class SimulationEngine:
         # Store pulse width for rain volume clutter calculation
         self._pulse_width_s = 1e-6  # 1 microsecond default
 
+        # ═══ PHASE 26: PULSE-DOPPLER PROCESSING ═══
+        self.pulse_doppler_enabled = False
+        self._pd_processor: Optional["PulseDopplerProcessor"] = None
+        self._rd_map: Optional["RangeDopplerMap"] = None
+        self._pd_mti_order = 0  # MTI canceller order
+        self._pd_n_pulses = 64  # Coherent pulses per CPI
+        self._pd_prf_hz = 1000.0  # Pulse repetition frequency
+
     def add_target(self, target: Target) -> None:
         """Add a target to the simulation."""
         self.targets.append(target)
         self.state.add_target(target)
+
+    def set_pulse_doppler_mode(
+        self,
+        enabled: bool,
+        n_pulses: int = 64,
+        prf_hz: float = 1000.0,
+        mti_order: int = 0,
+    ) -> None:
+        """
+        Enable/disable signal-level pulse-Doppler processing (Phase 26).
+
+        When enabled, generates a true Range-Doppler map from coherent
+        pulse train processing instead of parametric detection only.
+
+        Args:
+            enabled: Enable pulse-Doppler processing
+            n_pulses: Pulses per CPI (slow-time dimension)
+            prf_hz: Pulse repetition frequency [Hz]
+            mti_order: MTI canceller order (0=off, 1=2-pulse, 2=3-pulse)
+
+        Reference: Richards (2005), "Fundamentals of Radar Signal Processing"
+        """
+        self.pulse_doppler_enabled = enabled and PULSE_DOPPLER_AVAILABLE
+        self._pd_n_pulses = n_pulses
+        self._pd_prf_hz = prf_hz
+        self._pd_mti_order = mti_order
+
+        if self.pulse_doppler_enabled:
+            self._pd_processor = PulseDopplerProcessor(
+                prf_hz=prf_hz,
+                n_pulses=n_pulses,
+                n_range_bins=512,
+                bandwidth_hz=5e6,
+                pulse_width_s=self._pulse_width_s,
+                frequency_hz=self.radar.frequency_hz,
+                mti_order=mti_order,
+                window_type="hamming",
+            )
+            self._rd_map = None
+        else:
+            self._pd_processor = None
+            self._rd_map = None
+
+    def _run_pulse_doppler(self) -> None:
+        """
+        Execute pulse-Doppler processing for targets in the antenna beam.
+
+        Only processes when the beam sweeps past targets (simulates
+        real radar dwell time). Updates the internal R-D map.
+
+        Reference: Richards (2005), Ch. 3-5
+        """
+        if not self.pulse_doppler_enabled or self._pd_processor is None:
+            return
+
+        # Throttle PD processing to every 5th frame (~6 Hz at 30 FPS)
+        if self._frame_count % 5 != 0:
+            return
+
+        # Collect targets within the antenna beam or nearby
+        ranges_m = []
+        velocities_mps = []
+        amplitudes = []
+
+        for target in self.targets:
+            geom = self.radar.calculate_target_geometry(
+                target.position, target.velocity
+            )
+            r_m = geom["range_m"]
+            if r_m < 100.0 or r_m > self._pd_processor.max_unambiguous_range_m:
+                continue
+
+            # Check if target is within ±beamwidth of current antenna pointing
+            az_diff = abs(geom["azimuth_rad"] - self.radar.antenna_azimuth)
+            if az_diff > np.pi:
+                az_diff = 2 * np.pi - az_diff
+            if az_diff > self.radar.beamwidth_rad * 2.0:
+                continue  # Target not illuminated by beam
+
+            rcs = target.get_rcs(self.radar.position)
+            # Amplitude from radar equation (simplified)
+            snr_lin = max(
+                10 ** (self.state.snr_values.get(target.target_id, 0.0) / 10.0),
+                1e-6,
+            )
+            amplitude = np.sqrt(snr_lin)
+
+            ranges_m.append(r_m)
+            velocities_mps.append(geom["radial_velocity_mps"])
+            amplitudes.append(amplitude)
+
+        # Always generate R-D map (with at least noise)
+        self._rd_map = self._pd_processor.process_cpi(
+            target_ranges_m=np.array(ranges_m) if ranges_m else np.array([]),
+            target_velocities_mps=np.array(velocities_mps) if velocities_mps else np.array([]),
+            target_amplitudes=np.array(amplitudes) if amplitudes else np.array([]),
+            noise_power=1e-12,
+        )
 
     def set_ecm_mode(self, active: bool, ecm_type: str = "noise") -> None:
         """
@@ -812,6 +927,10 @@ class SimulationEngine:
                 ft.position = ft.position + ft.velocity * dt
                 active_false_targets.append(ft)
         self.false_targets = active_false_targets
+
+        # 5. Pulse-Doppler processing (Phase 26)
+        # Generate Range-Doppler map when enabled
+        self._run_pulse_doppler()
 
         return results
 

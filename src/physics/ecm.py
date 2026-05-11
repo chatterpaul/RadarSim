@@ -415,6 +415,271 @@ class ECMSimulator:
         return 0.0
 
 
+# ═══════════════════════════════════════════════════════════════════════
+# PHASE 28: DRFM JAMMER (Digital Radio Frequency Memory)
+# ═══════════════════════════════════════════════════════════════════════
+
+C_LIGHT = 299_792_458.0
+
+
+class DRFMState(Enum):
+    """DRFM jammer operational states."""
+
+    IDLE = "idle"          # Not active
+    CAPTURE = "capture"    # Capturing radar's range gate
+    PULL = "pull"          # Pulling range/velocity gate away
+    RELEASE = "release"    # Releasing — radar loses track
+
+
+@dataclass
+class DRFMConfig:
+    """
+    DRFM Jammer configuration.
+
+    Attributes:
+        power_watts: Jammer effective radiated power [W]
+        gain_over_skin_db: J/S advantage over skin return [dB]
+        pull_rate_mps: Range gate pull rate [m/s]
+        max_pull_m: Maximum pull distance [m]
+        capture_dwell_s: Time to establish gate capture [s]
+        mode: 'rgpo' for range pull, 'vgpo' for velocity pull
+        vgpo_accel_hz_per_s: Velocity gate pull acceleration [Hz/s]
+
+    Reference: Schleher (1999), Ch. 7
+    """
+
+    power_watts: float = 500.0
+    gain_over_skin_db: float = 10.0
+    pull_rate_mps: float = 100.0
+    max_pull_m: float = 5000.0
+    capture_dwell_s: float = 2.0
+    mode: str = "rgpo"  # "rgpo" or "vgpo"
+    vgpo_accel_hz_per_s: float = 50.0
+
+
+class DRFMJammer:
+    """
+    Digital Radio Frequency Memory (DRFM) Jammer.
+
+    Implements coherent deception jamming via Range Gate Pull-Off (RGPO)
+    and Velocity Gate Pull-Off (VGPO) techniques.
+
+    State Machine:
+        IDLE → CAPTURE → PULL → RELEASE
+
+    RGPO Physics:
+        1. Jammer receives radar pulse, stores in DRFM memory
+        2. Retransmits with controlled delay Δτ(t)
+        3. Apparent range: R_app(t) = R_true + pull_rate · t
+        4. Delay per update: Δτ_step = 2 · pull_rate · dt / c
+
+    VGPO Physics:
+        1. Jammer modulates retransmitted pulse with Doppler offset
+        2. f_d_jam(t) = f_d_true + accel · t
+        3. Pulls velocity gate away from true target Doppler
+
+    CPI Integration:
+        inject_into_cpi() adds phase-coherent false returns into the
+        Pulse-Doppler CPI data matrix at the offset range/Doppler bin.
+
+    Reference:
+        - Schleher, "Electronic Warfare in the Information Age", 1999, Ch. 7
+        - Skolnik, "Radar Handbook", 3rd Ed., Ch. 24.3
+        - Developed by Mehmet Gümüş (github.com/SpaceEngineerSS)
+    """
+
+    def __init__(self, config: Optional[DRFMConfig] = None) -> None:
+        """
+        Initialize DRFM jammer.
+
+        Args:
+            config: Jammer configuration (defaults to standard RGPO)
+        """
+        self.config = config or DRFMConfig()
+        self.state = DRFMState.IDLE
+
+        # Internal state
+        self._capture_timer: float = 0.0
+        self._pull_offset_m: float = 0.0
+        self._pull_offset_hz: float = 0.0
+        self._total_time: float = 0.0
+        self._active: bool = False
+
+    def activate(self) -> None:
+        """Activate jammer — begins capture sequence."""
+        if self.state == DRFMState.IDLE:
+            self.state = DRFMState.CAPTURE
+            self._capture_timer = 0.0
+            self._pull_offset_m = 0.0
+            self._pull_offset_hz = 0.0
+            self._active = True
+
+    def deactivate(self) -> None:
+        """Deactivate jammer — returns to IDLE."""
+        self.state = DRFMState.IDLE
+        self._active = False
+        self._pull_offset_m = 0.0
+        self._pull_offset_hz = 0.0
+
+    def step(self, dt: float) -> None:
+        """
+        Advance jammer state machine by one time step.
+
+        State transitions:
+            IDLE:    No action
+            CAPTURE: Wait for capture_dwell_s → transition to PULL
+            PULL:    Increase offset → transition to RELEASE at max_pull
+            RELEASE: Abrupt stop (radar loses track)
+
+        Args:
+            dt: Time step [s]
+        """
+        self._total_time += dt
+
+        if self.state == DRFMState.IDLE:
+            return
+
+        if self.state == DRFMState.CAPTURE:
+            self._capture_timer += dt
+            if self._capture_timer >= self.config.capture_dwell_s:
+                self.state = DRFMState.PULL
+
+        elif self.state == DRFMState.PULL:
+            if self.config.mode == "rgpo":
+                # RGPO: Increase range offset
+                # Δτ_step = 2 · pull_rate · dt / c
+                self._pull_offset_m += self.config.pull_rate_mps * dt
+                if self._pull_offset_m >= self.config.max_pull_m:
+                    self.state = DRFMState.RELEASE
+
+            elif self.config.mode == "vgpo":
+                # VGPO: Increase Doppler offset
+                self._pull_offset_hz += self.config.vgpo_accel_hz_per_s * dt
+                # Max pull at 500 Hz offset (reasonable for X-band)
+                if abs(self._pull_offset_hz) > 500.0:
+                    self.state = DRFMState.RELEASE
+
+        elif self.state == DRFMState.RELEASE:
+            # Abrupt release — radar loses track
+            self._active = False
+            self.state = DRFMState.IDLE
+            self._pull_offset_m = 0.0
+            self._pull_offset_hz = 0.0
+
+    def inject_into_cpi(
+        self,
+        cpi_data: np.ndarray,
+        true_range_m: float,
+        true_velocity_mps: float,
+        amplitude: float,
+        range_resolution_m: float,
+        wavelength_m: float,
+        pri_s: float,
+        n_range_bins: int,
+    ) -> np.ndarray:
+        """
+        Inject DRFM false return into CPI data matrix.
+
+        Adds a phase-coherent pulse replica at the offset range/Doppler
+        position determined by the current pull state.
+
+        The injected signal maintains coherence with the radar's
+        LFM chirp (matched filter compatible) to survive range
+        compression and Doppler processing.
+
+        Args:
+            cpi_data: Raw CPI data [n_pulses, n_range_bins], complex
+            true_range_m: True target range [m]
+            true_velocity_mps: True target radial velocity [m/s]
+            amplitude: Signal amplitude (linear, from J/S)
+            range_resolution_m: Range resolution [m]
+            wavelength_m: Radar wavelength [m]
+            pri_s: Pulse repetition interval [s]
+            n_range_bins: Number of range bins
+
+        Returns:
+            Modified CPI data with injected false return
+
+        Reference: Schleher (1999), Eq. 7.4
+        """
+        if self.state not in (DRFMState.CAPTURE, DRFMState.PULL):
+            return cpi_data
+
+        n_pulses = cpi_data.shape[0]
+
+        # Calculate false target position
+        if self.config.mode == "rgpo":
+            false_range_m = true_range_m + self._pull_offset_m
+            false_velocity_mps = true_velocity_mps
+        else:  # VGPO
+            false_range_m = true_range_m
+            false_velocity_mps = (
+                true_velocity_mps + self._pull_offset_hz * wavelength_m / 2.0
+            )
+
+        # J/S gain: jammer is stronger than skin return
+        jammer_amplitude = amplitude * 10.0 ** (self.config.gain_over_skin_db / 20.0)
+
+        # Range bin for false target
+        false_range_bin = int(round(false_range_m / range_resolution_m))
+        if false_range_bin < 0 or false_range_bin >= n_range_bins:
+            return cpi_data
+
+        # Doppler phase for false target (phase-coherent with radar LFM)
+        n_idx = np.arange(n_pulses, dtype=np.float64)
+        doppler_phase = (
+            4.0 * np.pi * false_velocity_mps * n_idx * pri_s / wavelength_m
+        )
+        steering = jammer_amplitude * np.exp(1j * doppler_phase)
+
+        # Inject false return at offset range bin
+        # Use a narrow sinc response (same as legitimate target)
+        sinc_halfwidth = 2
+        sinc_idx = np.arange(-sinc_halfwidth, sinc_halfwidth + 1)
+        sinc_response = np.sinc(sinc_idx / 1.2).astype(np.complex128)
+        sinc_response /= np.linalg.norm(sinc_response)
+
+        for k, offset in enumerate(sinc_idx):
+            col = false_range_bin + offset
+            if 0 <= col < n_range_bins:
+                cpi_data[:, col] += steering * sinc_response[k]
+
+        return cpi_data
+
+    @property
+    def is_active(self) -> bool:
+        """Check if jammer is producing false returns."""
+        return self.state in (DRFMState.CAPTURE, DRFMState.PULL)
+
+    @property
+    def pull_offset_m(self) -> float:
+        """Current range pull offset [m]."""
+        return self._pull_offset_m
+
+    @property
+    def pull_offset_hz(self) -> float:
+        """Current Doppler pull offset [Hz]."""
+        return self._pull_offset_hz
+
+    @property
+    def false_range_offset_m(self) -> float:
+        """Range offset of false target from true position [m]."""
+        if self.config.mode == "rgpo":
+            return self._pull_offset_m
+        return 0.0
+
+    def get_status(self) -> dict:
+        """Get jammer status for UI display."""
+        return {
+            "state": self.state.value,
+            "mode": self.config.mode.upper(),
+            "active": self.is_active,
+            "pull_offset_m": self._pull_offset_m,
+            "pull_offset_hz": self._pull_offset_hz,
+            "power_watts": self.config.power_watts,
+        }
+
+
 def calculate_jamming_effectiveness(jsr_db: float, detection_threshold_db: float = 13.0) -> float:
     """
     Calculate jamming effectiveness as probability of mask.

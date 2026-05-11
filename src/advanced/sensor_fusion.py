@@ -376,7 +376,7 @@ class AdvancedSensorFusion:
 
     def effective_particle_size(self, weights: np.ndarray) -> float:
         """Effective particle size hesaplama"""
-        return 1.0 / np.sum(weights**2)
+        return float(1.0 / np.sum(weights**2))
 
     def calculate_mass_function(
         self, measurement: SensorMeasurement, frame: List[str]
@@ -461,7 +461,8 @@ class AdvancedSensorFusion:
     def neural_fusion_network(self, sensor_data: np.ndarray) -> np.ndarray:
         """Basitleştirilmiş neural fusion network"""
         # Basit weighted average (gerçek uygulamada CNN/RNN kullanılır)
-        weights = np.softmax(sensor_data[:, -1])  # Confidence-based weights
+        from scipy.special import softmax
+        weights = softmax(sensor_data[:, -1])  # Confidence-based weights
         fused_features = np.average(sensor_data[:, :-1], weights=weights, axis=0)
 
         return fused_features
@@ -480,9 +481,9 @@ class AdvancedSensorFusion:
         uncertainties = [np.trace(m.uncertainty) for m in measurements]
 
         return {
-            "linearity": np.mean(confidences),
-            "nonlinearity": 1 - np.mean(confidences),
-            "uncertainty": np.mean(uncertainties) / 100,  # Normalize
+            "linearity": float(np.mean(confidences)),
+            "nonlinearity": float(1 - np.mean(confidences)),
+            "uncertainty": float(np.mean(uncertainties) / 100),  # Normalize
         }
 
 
@@ -527,3 +528,21 @@ if __name__ == "__main__":
 
     print("Gelişmiş sensör füzyonu modülü test edildi.")
     print("Kaynak: Hall & Llinas, 'Multisensor Data Fusion', IEEE, 1997")
+
+
+# ═══════════════════════════════════════════════════════════════════════
+# PHASE 29: COVARIANCE INTERSECTION & STROBE TRIANGULATION
+# ═══════════════════════════════════════════════════════════════════════
+
+# Re-export CI and Triangulator from network_manager for backward compat
+try:
+    from src.simulation.network_manager import (
+        CovarianceIntersection,
+        FusedTrack,
+        NetworkTrack,
+        StrobeReport,
+        StrobeTriangulator,
+    )
+except ImportError:
+    pass
+

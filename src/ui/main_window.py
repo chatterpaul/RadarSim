@@ -520,6 +520,82 @@ class MainWindow(QMainWindow):
         self.monopulse_action.triggered.connect(self._on_monopulse_toggled)
         advanced_menu.addAction(self.monopulse_action)
 
+        advanced_menu.addSeparator()
+
+        # ═══ PHASE 26: PULSE-DOPPLER PROCESSING ═══
+        self.pd_action = QAction("📡 Enable &Pulse-Doppler Processing", self)
+        self.pd_action.setCheckable(True)
+        self.pd_action.setChecked(False)
+        self.pd_action.setToolTip(
+            "Signal-level CPI processing: Matched Filter → MTI → Doppler FFT\n"
+            "Reference: Richards (2005)"
+        )
+        self.pd_action.triggered.connect(self._on_pulse_doppler_toggled)
+        advanced_menu.addAction(self.pd_action)
+
+        # MTI sub-options
+        self.pd_mti_action = QAction("🔇 Enable MTI Canceller (2-pulse)", self)
+        self.pd_mti_action.setCheckable(True)
+        self.pd_mti_action.setChecked(False)
+        self.pd_mti_action.setToolTip(
+            "2-pulse MTI: y[n]=x[n]-x[n-1], null at zero Doppler\n"
+            "Suppresses stationary clutter >60 dB"
+        )
+        self.pd_mti_action.triggered.connect(self._on_pd_mti_toggled)
+        advanced_menu.addAction(self.pd_mti_action)
+
+        advanced_menu.addSeparator()
+
+        # ═══ PHASE 27: EXTENDED KALMAN FILTER ═══
+        self.ekf_action = QAction("🎯 Use Extended &Kalman Filter (Polar)", self)
+        self.ekf_action.setCheckable(True)
+        self.ekf_action.setChecked(False)
+        self.ekf_action.setToolTip(
+            "EKF with polar [r,θ] measurements\n"
+            "Adaptive R from SNR, Joseph form update\n"
+            "Reference: Bar-Shalom (2001)"
+        )
+        self.ekf_action.triggered.connect(self._on_ekf_toggled)
+        advanced_menu.addAction(self.ekf_action)
+
+        # ═══ PHASE 28: ELECTRONIC WARFARE ═══
+        advanced_menu.addSeparator()
+        ew_menu = advanced_menu.addMenu("⚡ Electronic Warfare")
+
+        self.jamming_action = QAction("🔴 &Jamming Environment", self)
+        self.jamming_action.setCheckable(True)
+        self.jamming_action.setChecked(False)
+        self.jamming_action.setToolTip(
+            "Activate noise/deception jamming\n"
+            "Elevates A-scope noise floor\n"
+            "Reference: Schleher (1999)"
+        )
+        self.jamming_action.triggered.connect(self._on_jamming_toggled)
+        ew_menu.addAction(self.jamming_action)
+
+        ew_menu.addSeparator()
+
+        self.freq_agility_action = QAction("📡 &Frequency Agility (ECCM)", self)
+        self.freq_agility_action.setCheckable(True)
+        self.freq_agility_action.setChecked(False)
+        self.freq_agility_action.setToolTip(
+            "Hop carrier frequency per CPI\n"
+            "Reduces narrowband J/S by 10·log₁₀(N)\n"
+            "Reference: Schleher (1999), Ch. 8.2"
+        )
+        self.freq_agility_action.triggered.connect(self._on_freq_agility_toggled)
+        ew_menu.addAction(self.freq_agility_action)
+
+        self.prf_stagger_action = QAction("⚡ &PRF Stagger (ECCM)", self)
+        self.prf_stagger_action.setCheckable(True)
+        self.prf_stagger_action.setChecked(False)
+        self.prf_stagger_action.setToolTip(
+            "Vary PRI ±5% to defeat RGPO\n"
+            "Reference: Schleher (1999), Ch. 8.4"
+        )
+        self.prf_stagger_action.triggered.connect(self._on_prf_stagger_toggled)
+        ew_menu.addAction(self.prf_stagger_action)
+
     def _setup_status_bar(self) -> None:
         """Setup status bar."""
         self.status_bar = QStatusBar()
@@ -1209,6 +1285,67 @@ class MainWindow(QMainWindow):
 
         status = "ACTIVE (precision angle tracking)" if checked else "OFF"
         self.status_bar.showMessage(f"MONOPULSE: {status}")
+
+    # ═══ PHASE 26: PULSE-DOPPLER HANDLERS ═══
+
+    def _on_pulse_doppler_toggled(self, checked: bool) -> None:
+        """Handle Pulse-Doppler Processing toggle."""
+        mti_order = 1 if hasattr(self, 'pd_mti_action') and self.pd_mti_action.isChecked() else 0
+        if self.sim_thread and hasattr(self.sim_thread, "set_pulse_doppler_mode"):
+            self.sim_thread.set_pulse_doppler_mode(
+                enabled=checked, n_pulses=64, prf_hz=1000.0, mti_order=mti_order
+            )
+
+        status = "ACTIVE [CPI→MF→FFT]" if checked else "OFF → Parametric mode"
+        self.status_bar.showMessage(f"PULSE-DOPPLER: {status}")
+
+    def _on_pd_mti_toggled(self, checked: bool) -> None:
+        """Handle MTI Canceller toggle within Pulse-Doppler mode."""
+        mti_order = 1 if checked else 0
+        pd_enabled = hasattr(self, 'pd_action') and self.pd_action.isChecked()
+        if pd_enabled and self.sim_thread and hasattr(self.sim_thread, "set_pulse_doppler_mode"):
+            self.sim_thread.set_pulse_doppler_mode(
+                enabled=True, n_pulses=64, prf_hz=1000.0, mti_order=mti_order
+            )
+
+        status = "MTI 2-Pulse ACTIVE (clutter suppression)" if checked else "MTI OFF"
+        self.status_bar.showMessage(f"PULSE-DOPPLER: {status}")
+
+    # ═══ PHASE 27: EKF HANDLER ═══
+
+    def _on_ekf_toggled(self, checked: bool) -> None:
+        """Handle EKF tracking toggle."""
+        if self.sim_thread and hasattr(self.sim_thread, "set_ekf_mode"):
+            self.sim_thread.set_ekf_mode(checked)
+
+        status = "EKF ACTIVE [r,θ] polar" if checked else "Linear KF [x,y] Cartesian"
+        self.status_bar.showMessage(f"TRACKING: {status}")
+
+    # ═══ PHASE 28: ELECTRONIC WARFARE HANDLERS ═══
+
+    def _on_jamming_toggled(self, checked: bool) -> None:
+        """Handle Jamming Environment toggle."""
+        if self.sim_thread and hasattr(self.sim_thread, "set_jamming_environment"):
+            self.sim_thread.set_jamming_environment(checked)
+
+        status = "🔴 JAMMING ACTIVE (J/S = 20 dB)" if checked else "CLEAR — No jamming"
+        self.status_bar.showMessage(f"EW: {status}")
+
+    def _on_freq_agility_toggled(self, checked: bool) -> None:
+        """Handle Frequency Agility toggle."""
+        if self.sim_thread and hasattr(self.sim_thread, "set_freq_agility"):
+            self.sim_thread.set_freq_agility(checked)
+
+        status = "📡 FREQ AGILITY ON (10 hops, -10 dB J/S)" if checked else "Fixed frequency"
+        self.status_bar.showMessage(f"ECCM: {status}")
+
+    def _on_prf_stagger_toggled(self, checked: bool) -> None:
+        """Handle PRF Stagger toggle."""
+        if self.sim_thread and hasattr(self.sim_thread, "set_prf_stagger"):
+            self.sim_thread.set_prf_stagger(checked)
+
+        status = "⚡ PRF STAGGER ON (±5% jitter)" if checked else "Fixed PRF"
+        self.status_bar.showMessage(f"ECCM: {status}")
 
     # ═══ PHASE 22: SCENARIO EXPORT ═══
 

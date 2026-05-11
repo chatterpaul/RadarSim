@@ -22,7 +22,7 @@ from .constants import (
     STANDARD_PRESSURE,
     STANDARD_TEMPERATURE,
 )
-from .ecm import ECMSimulator, ECMType
+from .ecm import DRFMJammer, DRFMState, ECMSimulator, ECMType
 from .radar_equation import (
     RadarParameters,
     calculate_detection_range,
@@ -60,4 +60,7 @@ __all__ = [
     # ECM
     "ECMSimulator",
     "ECMType",
+    # Phase 28: DRFM Jammer
+    "DRFMJammer",
+    "DRFMState",
 ]

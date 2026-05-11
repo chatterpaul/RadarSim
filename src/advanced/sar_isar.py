@@ -440,32 +440,294 @@ class AdvancedSARISAR:
         }
 
 
-# Test fonksiyonu
-if __name__ == "__main__":
-    # Test parametreleri
-    sar_processor = AdvancedSARISAR(fc=10e9, bandwidth=100e6, prf=1000)
 
-    # Test hedefleri
-    target_positions = np.array(
-        [
-            [0, 1000, 0],  # 1km menzilde hedef
-            [50, 1000, 0],  # 1km menzilde, 50m offset
-            [-50, 1000, 0],  # 1km menzilde, -50m offset
-        ]
+# ═══════════════════════════════════════════════════════════════════════
+# PHASE 30: VECTORIZED RDA & ISAR PROCESSOR
+# ═══════════════════════════════════════════════════════════════════════
+
+
+class SARImageResult:
+    """
+    Container for SAR/ISAR image output.
+
+    Attributes:
+        image_db: 2D focused image [dB]
+        range_axis_m: Range axis values [m]
+        cross_range_axis_m: Cross-range or azimuth axis [m]
+        range_resolution_m: Achieved range resolution [m]
+        azimuth_resolution_m: Achieved azimuth resolution [m]
+    """
+
+    __slots__ = (
+        "image_db",
+        "range_axis_m",
+        "cross_range_axis_m",
+        "range_resolution_m",
+        "azimuth_resolution_m",
     )
-    target_rcs = np.array([1.0, 0.5, 0.8])
 
-    # SAR ham veri üretimi
-    raw_data = sar_processor.generate_sar_raw_data(target_positions, target_rcs)
-    print(f"SAR ham veri boyutu: {raw_data.shape}")
+    def __init__(
+        self,
+        image_db: np.ndarray,
+        range_axis_m: np.ndarray,
+        cross_range_axis_m: np.ndarray,
+        range_resolution_m: float,
+        azimuth_resolution_m: float,
+    ) -> None:
+        self.image_db = image_db
+        self.range_axis_m = range_axis_m
+        self.cross_range_axis_m = cross_range_axis_m
+        self.range_resolution_m = range_resolution_m
+        self.azimuth_resolution_m = azimuth_resolution_m
 
-    # Range-Doppler Algorithm
-    rda_image = sar_processor.range_doppler_algorithm(raw_data)
-    print(f"RDA görüntü boyutu: {rda_image.shape}")
 
-    # Görüntü kalitesi
-    quality = sar_processor.calculate_image_quality(rda_image)
-    print(f"Görüntü kalitesi: SNR={quality['SNR_dB']:.1f} dB, Kontrast={quality['Contrast']:.2f}")
+def rda_vectorized(
+    raw_data: np.ndarray,
+    bandwidth_hz: float,
+    prf_hz: float,
+    fc_hz: float,
+    platform_velocity_mps: float,
+    antenna_length_m: float = 1.0,
+) -> SARImageResult:
+    """
+    Vectorized Range-Doppler Algorithm (RDA) for SAR image reconstruction.
 
-    print("Gelişmiş SAR/ISAR modülü test edildi.")
-    print("Kaynak: Oliver & Quegan, 'Understanding SAR Images', IEEE Press, 1998")
+    Processes a 2D data matrix using batch FFT operations:
+        1. Range FFT (fast-time compression)
+        2. Corner Turn → Azimuth FFT
+        3. RCMC (bulk shift in range-Doppler domain)
+        4. Azimuth matched filter
+        5. Azimuth IFFT → focused image
+
+    Resolution:
+        Δr = c / (2·B)          — Range resolution [m]
+        Δa = D / 2              — Azimuth resolution [m] (stripmap)
+
+    Args:
+        raw_data: [n_range, n_azimuth] complex raw data matrix
+        bandwidth_hz: Waveform bandwidth [Hz]
+        prf_hz: Pulse repetition frequency [Hz]
+        fc_hz: Carrier frequency [Hz]
+        platform_velocity_mps: Platform velocity [m/s]
+        antenna_length_m: Physical antenna length [m]
+
+    Returns:
+        SARImageResult with focused image and metadata
+
+    Reference: Cumming & Wong, "Digital Processing of SAR Data", 2005
+    """
+    n_range, n_azimuth = raw_data.shape
+    wavelength = c / fc_hz
+    range_res = c / (2.0 * bandwidth_hz)
+    azimuth_res = antenna_length_m / 2.0
+
+    # ── STAGE 1: Range Compression (batch FFT along axis=0) ──
+    # Generate chirp reference in frequency domain
+    chirp_duration = 1.0 / bandwidth_hz * n_range
+    t_chirp = np.linspace(-chirp_duration / 2, chirp_duration / 2, n_range)
+    chirp_rate = bandwidth_hz / chirp_duration
+    chirp_ref = np.exp(1j * np.pi * chirp_rate * t_chirp**2)
+    chirp_fft = np.fft.fft(chirp_ref, n=n_range)
+
+    # Range FFT all pulses at once (vectorized)
+    raw_range_fft = np.fft.fft(raw_data, axis=0)
+    # Matched filter: multiply by conjugate of chirp spectrum
+    range_compressed_fft = raw_range_fft * np.conj(chirp_fft)[:, np.newaxis]
+    range_compressed = np.fft.ifft(range_compressed_fft, axis=0)
+
+    # ── STAGE 2: Azimuth FFT (Corner Turn implicit in axis=1) ──
+    range_doppler = np.fft.fftshift(np.fft.fft(range_compressed, axis=1), axes=1)
+
+    # ── STAGE 3: RCMC (bulk range shift per Doppler bin) ──
+    f_doppler = np.linspace(-prf_hz / 2, prf_hz / 2, n_azimuth)
+    # Reference range (center of swath)
+    R0 = c * n_range / (4.0 * bandwidth_hz)
+    R0 = max(R0, 1000.0)  # Minimum 1km
+
+    # Doppler chirp rate
+    Ka = -2.0 * platform_velocity_mps**2 / (wavelength * R0)
+
+    # RCMC: range shift as function of Doppler frequency
+    # ΔR(fd) = λ²·R₀·fd² / (8·v²) — simplified for small angles
+    delta_R = wavelength**2 * R0 * f_doppler**2 / (8.0 * platform_velocity_mps**2)
+    delta_bins = np.round(delta_R / range_res).astype(int)
+
+    # Apply RCMC via circular shift per Doppler column
+    rcmc_data = range_doppler.copy()
+    for j in range(n_azimuth):
+        if delta_bins[j] != 0:
+            rcmc_data[:, j] = np.roll(range_doppler[:, j], -delta_bins[j])
+
+    # ── STAGE 4: Azimuth Matched Filter ──
+    # Phase: exp(j·π·fd²/Ka)
+    with np.errstate(divide="ignore", invalid="ignore"):
+        az_filter = np.exp(1j * np.pi * f_doppler**2 / Ka)
+    az_filter = np.where(np.isfinite(az_filter), az_filter, 0.0)
+
+    # Apply azimuth compression (multiply in Doppler domain)
+    az_compressed = rcmc_data * az_filter[np.newaxis, :]
+
+    # ── STAGE 5: Azimuth IFFT → focused image ──
+    focused = np.fft.ifft(np.fft.ifftshift(az_compressed, axes=1), axis=1)
+
+    # Convert to dB
+    image_mag = np.abs(focused)
+    image_mag = np.where(image_mag > 0, image_mag, 1e-20)
+    image_db = 20.0 * np.log10(image_mag / np.max(image_mag))
+
+    # Build axes
+    range_axis = np.arange(n_range) * range_res
+    cross_range_axis = np.linspace(
+        -n_azimuth / 2 * azimuth_res,
+        n_azimuth / 2 * azimuth_res,
+        n_azimuth,
+    )
+
+    return SARImageResult(
+        image_db=image_db,
+        range_axis_m=range_axis,
+        cross_range_axis_m=cross_range_axis,
+        range_resolution_m=range_res,
+        azimuth_resolution_m=azimuth_res,
+    )
+
+
+class ISARProcessor:
+    """
+    Inverse SAR (ISAR) image processor.
+
+    Uses the target's own motion (rotation/translation) to create
+    a high-resolution cross-range profile from CPI data.
+
+    Cross-range resolution: Δcr = λ / (2·Δθ)
+    where Δθ is the total target rotation during the CPI.
+
+    Algorithm:
+        1. Range compression (matched filter)
+        2. Translational motion compensation (align range profiles)
+        3. Cross-range FFT (Doppler spread → cross-range)
+
+    Reference:
+        - Chen & Ling, "Time-Frequency Transforms for Radar Imaging", Artech, 2002
+        - Developed by Mehmet Gümüş (github.com/SpaceEngineerSS)
+    """
+
+    def __init__(
+        self,
+        fc_hz: float = 10e9,
+        bandwidth_hz: float = 100e6,
+        prf_hz: float = 1000.0,
+        n_pulses: int = 64,
+    ) -> None:
+        """
+        Initialize ISAR processor.
+
+        Args:
+            fc_hz: Carrier frequency [Hz]
+            bandwidth_hz: Waveform bandwidth [Hz]
+            prf_hz: Pulse repetition frequency [Hz]
+            n_pulses: Number of pulses in CPI
+        """
+        self.fc_hz = fc_hz
+        self.bandwidth_hz = bandwidth_hz
+        self.prf_hz = prf_hz
+        self.n_pulses = n_pulses
+        self.wavelength_m = c / fc_hz
+        self.range_res_m = c / (2.0 * bandwidth_hz)
+
+    def process_isar(
+        self,
+        cpi_data: np.ndarray,
+        rotation_rate_rps: float = 0.01,
+    ) -> SARImageResult:
+        """
+        Generate ISAR image from CPI data.
+
+        Args:
+            cpi_data: [n_pulses, n_range_bins] complex CPI data
+            rotation_rate_rps: Target rotation rate [rad/s]
+
+        Returns:
+            SARImageResult with focused ISAR image
+
+        Reference: Chen & Ling (2002), Ch. 5
+        """
+        n_pulses, n_range = cpi_data.shape
+
+        # ── Step 1: Range compression (FFT along fast-time) ──
+        range_compressed = np.fft.ifft(
+            np.fft.fft(cpi_data, axis=1) *
+            np.conj(self._chirp_spectrum(n_range))[np.newaxis, :],
+            axis=1,
+        )
+
+        # ── Step 2: Translational motion compensation ──
+        # Align range profiles using cross-correlation with reference pulse
+        aligned = self._motion_compensate(range_compressed)
+
+        # ── Step 3: Cross-range FFT (along slow-time/pulse axis) ──
+        # Hamming window for sidelobe reduction
+        window = np.hamming(n_pulses)[:, np.newaxis]
+        windowed = aligned * window
+
+        isar_image = np.fft.fftshift(np.fft.fft(windowed, axis=0), axes=0)
+
+        # ── Resolution calculation ──
+        T_cpi = n_pulses / self.prf_hz
+        delta_theta = rotation_rate_rps * T_cpi
+        if delta_theta > 1e-6:
+            cross_range_res = self.wavelength_m / (2.0 * delta_theta)
+        else:
+            cross_range_res = float("inf")
+
+        # Convert to dB
+        mag = np.abs(isar_image)
+        mag = np.where(mag > 0, mag, 1e-20)
+        image_db = 20.0 * np.log10(mag / np.max(mag))
+
+        range_axis = np.arange(n_range) * self.range_res_m
+        cross_range_axis = np.linspace(
+            -n_pulses / 2 * cross_range_res,
+            n_pulses / 2 * cross_range_res,
+            n_pulses,
+        ) if np.isfinite(cross_range_res) else np.arange(n_pulses, dtype=float)
+
+        return SARImageResult(
+            image_db=image_db,
+            range_axis_m=range_axis,
+            cross_range_axis_m=cross_range_axis,
+            range_resolution_m=self.range_res_m,
+            azimuth_resolution_m=cross_range_res,
+        )
+
+    def _chirp_spectrum(self, n_range: int) -> np.ndarray:
+        """Generate chirp reference spectrum for range compression."""
+        t = np.linspace(-0.5 / self.bandwidth_hz * n_range,
+                        0.5 / self.bandwidth_hz * n_range, n_range)
+        chirp_rate = self.bandwidth_hz / (1.0 / self.bandwidth_hz * n_range)
+        chirp = np.exp(1j * np.pi * chirp_rate * t**2)
+        return np.fft.fft(chirp)
+
+    def _motion_compensate(self, range_profiles: np.ndarray) -> np.ndarray:
+        """
+        Translational motion compensation via range profile alignment.
+
+        Uses cross-correlation with reference profile (first pulse)
+        to estimate and correct range shifts.
+
+        Reference: Chen & Ling (2002), Ch. 4
+        """
+        n_pulses, n_range = range_profiles.shape
+        aligned = np.zeros_like(range_profiles)
+        ref_profile = np.abs(range_profiles[0])
+
+        for i in range(n_pulses):
+            current = np.abs(range_profiles[i])
+            # Cross-correlation to find shift
+            correlation = np.correlate(current, ref_profile, mode="full")
+            shift = np.argmax(correlation) - (n_range - 1)
+            # Apply shift
+            aligned[i] = np.roll(range_profiles[i], -shift)
+
+        return aligned
+

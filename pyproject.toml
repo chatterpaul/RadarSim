@@ -4,14 +4,14 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "radarsim"
-version = "1.0.0"
+version = "2.4.0"
 description = "Professional radar seeker simulation with 3D physics, tracking, and ECM"
 readme = "README.md"
 license = {file = "LICENSE"}
 authors = [
     {name = "RadarSim Contributors"}
 ]
-keywords = ["radar", "simulation", "tracking", "ecm", "kalman-filter", "aerospace"]
+keywords = ["radar", "simulation", "tracking", "ecm", "eccm", "sar", "isar", "kalman-filter", "aerospace", "electronic-warfare"]
 classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Science/Research",
@@ -91,3 +91,7 @@ ignore_missing_imports = true
 testpaths = ["tests"]
 python_files = ["test_*.py"]
 addopts = "-v --tb=short"
+markers = [
+    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+]
+

@@ -78,6 +78,7 @@ class TargetSymbol:
     classification: str = ""
     is_selected: bool = False
     snr_db: float = 20.0
+    is_jammed: bool = False  # Phase 28: EA status
 
 
 # =============================================================================
@@ -108,6 +109,10 @@ class SymbolColors:
 
     # Velocity leader
     VELOCITY_LEADER = QColor(255, 255, 255, 180)
+
+    # Phase 28: Jammed status
+    JAMMED = QColor(255, 0, 255)          # Magenta
+    JAMMED_GLOW = QColor(255, 0, 255, 80) # Pulsing glow
 
     @classmethod
     def get_color(cls, affiliation: Affiliation) -> QColor:
@@ -315,6 +320,23 @@ class SymbolGenerator:
             painter.setFont(self.font)
             painter.setPen(QColor(180, 180, 180, 200))
             painter.drawText(QPointF(self.SYMBOL_SIZE + 4, 4), symbol.classification)
+
+        # ═══ PHASE 28: Jammed status indicator ═══
+        if symbol.is_jammed:
+            # Pulsing magenta border
+            import time
+            pulse = int(128 + 127 * np.sin(time.time() * 6))  # 3 Hz pulse
+            jammed_color = QColor(255, 0, 255, pulse)
+            jammed_pen = QPen(jammed_color, 3)
+            jammed_pen.setStyle(Qt.PenStyle.DashDotLine)
+            painter.setPen(jammed_pen)
+            painter.setBrush(Qt.BrushStyle.NoBrush)
+            poly = self.get_symbol_polygon(symbol.affiliation, self.SYMBOL_SIZE + 8)
+            painter.drawPolygon(poly)
+            # "JAM" label
+            painter.setFont(self.font_bold)
+            painter.setPen(SymbolColors.JAMMED)
+            painter.drawText(QPointF(-8, self.SYMBOL_SIZE + 24), "JAM")
 
         painter.restore()
 

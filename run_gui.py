@@ -23,6 +23,17 @@ References:
 import os
 import sys
 
+# Fix Unicode output on Windows (cp1254/cp1252 → utf-8)
+try:
+    _reconfigure = getattr(sys.stdout, "reconfigure", None)
+    if _reconfigure:
+        _reconfigure(encoding="utf-8", errors="replace")
+    _reconfigure = getattr(sys.stderr, "reconfigure", None)
+    if _reconfigure:
+        _reconfigure(encoding="utf-8", errors="replace")
+except Exception:
+    pass
+
 # Ensure project root is in path
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 

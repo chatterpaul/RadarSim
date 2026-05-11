@@ -49,7 +49,7 @@ class SimulationWorker(QObject):
     error = pyqtSignal(str)
 
     def __init__(
-        self, engine: SimulationEngine, update_rate_hz: float = 30.0, parent: QObject = None
+        self, engine: SimulationEngine, update_rate_hz: float = 30.0, parent: Optional[QObject] = None
     ):
         """
         Initialize simulation worker.
@@ -153,21 +153,24 @@ class SimulationWorker(QObject):
 
                 # Build track data for UI
                 for track in tracks:
-                    tracks_data.append(
-                        {
-                            "track_id": track.id,
-                            "status": track.status.value,
-                            "position": list(track.position),
-                            "velocity": list(track.velocity),
-                            "speed_mps": track.speed_mps,
-                            "heading_rad": track.heading_rad,
-                            "hits": track.hits,
-                            "misses": track.misses,
-                            "history": track.history[-20:],  # Last 20 positions
-                            "classification": track.classification,
-                            "confidence": track.confidence,
-                        }
-                    )
+                    track_dict = {
+                        "track_id": track.id,
+                        "id": track.id,
+                        "status": track.status.value,
+                        "position": list(track.position),
+                        "velocity": list(track.velocity),
+                        "speed_mps": track.speed_mps,
+                        "heading_rad": track.heading_rad,
+                        "hits": track.hits,
+                        "misses": track.misses,
+                        "history": track.history[-20:],  # Last 20 positions
+                        "classification": track.classification,
+                        "confidence": track.confidence,
+                    }
+                    # Phase 27: Add covariance for EKF uncertainty ellipse
+                    if hasattr(track.state, "P") and track.state.P is not None:
+                        track_dict["covariance"] = track.state.P.tolist()
+                    tracks_data.append(track_dict)
             except Exception as e:
                 pass  # Fail silently
 
@@ -196,6 +199,23 @@ class SimulationWorker(QObject):
         except Exception:
             pass  # Fail silently to prevent crash
 
+        # ═══ PHASE 26: PULSE-DOPPLER R-D MAP ═══
+        rd_map_data = None
+        pd_metadata = None
+        if getattr(self.engine, "pulse_doppler_enabled", False) and self.engine._rd_map is not None:
+            rdm = self.engine._rd_map
+            rd_map_data = rdm.data_db.tolist()  # Serialize for signal
+            pd_metadata = {
+                "range_axis_m": rdm.range_axis_m.tolist(),
+                "velocity_axis_mps": rdm.velocity_axis_mps.tolist(),
+                "blind_speeds_mps": rdm.blind_speeds_mps,
+                "mti_order": rdm.mti_order,
+                "processing_gain_db": rdm.processing_gain_db,
+                "n_pulses": rdm.n_pulses,
+                "prf_hz": rdm.prf_hz,
+                "wavelength_m": rdm.wavelength_m,
+            }
+
         return {
             "time": self.engine.simulation_time,
             "radar": {
@@ -214,12 +234,43 @@ class SimulationWorker(QObject):
             "jamming_active": getattr(self.engine, "ecm_active", False),
             "ecm_type": getattr(self.engine, "ecm_type", "noise"),
             "false_targets": false_targets_data,
+            # Phase 26: Pulse-Doppler
+            "pulse_doppler_enabled": getattr(self.engine, "pulse_doppler_enabled", False),
+            "rd_map": rd_map_data,
+            "pd_metadata": pd_metadata,
+            # Phase 28: ECCM state
+            "eccm": self._get_eccm_state(),
             "log": {
                 "total_opportunities": self.engine.log.total_opportunities,
                 "total_detections": self.engine.log.total_detections,
                 "detection_ratio": self.engine.log.detection_ratio,
             },
         }
+
+    def _get_eccm_state(self) -> dict:
+        """
+        Get ECCM state for UI.
+
+        Returns dict with jamming/ECCM status for the control panel.
+        Lazily initializes the ECCM controller on first call.
+        """
+        # Lazy init
+        if not hasattr(self, "_eccm_controller"):
+            try:
+                from src.advanced.eccm import ECCMController
+                self._eccm_controller = ECCMController(
+                    center_freq_hz=getattr(self.engine, "frequency_hz", 10e9),
+                    nominal_prf_hz=getattr(self.engine, "prf_hz", 1000.0),
+                )
+            except (ImportError, Exception):
+                self._eccm_controller = None
+
+        if self._eccm_controller is not None:
+            try:
+                return self._eccm_controller.get_status()
+            except Exception:
+                pass
+        return {"jamming_active": False, "effective_jsr_db": -100}
 
     def stop(self):
         """Stop the simulation loop."""
@@ -248,6 +299,7 @@ class SimulationWorker(QObject):
         return self._paused
 
 
+
 class SimulationThread(QThread):
     """
     Thread wrapper for SimulationWorker.
@@ -266,7 +318,7 @@ class SimulationThread(QThread):
     error = pyqtSignal(str)
 
     def __init__(
-        self, engine: SimulationEngine, update_rate_hz: float = 30.0, parent: QObject = None
+        self, engine: SimulationEngine, update_rate_hz: float = 30.0, parent: Optional[QObject] = None
     ):
         """
         Initialize simulation thread.
@@ -313,7 +365,7 @@ class SimulationThread(QThread):
         if self._worker:
             self._worker.set_speed(factor)
 
-    def set_ecm_state(self, active: bool, ecm_type: str = "noise", target_id: int = None):
+    def set_ecm_state(self, active: bool, ecm_type: str = "noise", target_id: Optional[int] = None):
         """
         Set ECM state in the simulation engine (thread-safe).
 
@@ -457,6 +509,126 @@ class SimulationThread(QThread):
                 print("[MONOPULSE] Standard beam tracking")
         except Exception as e:
             print(f"[MONOPULSE] Engine update failed: {e}")
+
+    # ═══ PHASE 26: PULSE-DOPPLER PROCESSING ═══
+
+    def set_pulse_doppler_mode(
+        self, enabled: bool, n_pulses: int = 64, prf_hz: float = 1000.0, mti_order: int = 0
+    ):
+        """
+        Set pulse-Doppler processing mode.
+
+        Enables signal-level coherent processing with true Range-Doppler
+        map generation via CPI → Matched Filter → MTI → Doppler FFT.
+
+        Args:
+            enabled: Whether pulse-Doppler processing is active
+            n_pulses: Pulses per CPI
+            prf_hz: Pulse repetition frequency [Hz]
+            mti_order: MTI canceller order (0=off, 1=2-pulse, 2=3-pulse)
+
+        Reference: Richards (2005), "Fundamentals of Radar Signal Processing"
+        """
+        try:
+            self.engine.set_pulse_doppler_mode(enabled, n_pulses, prf_hz, mti_order)
+
+            if enabled:
+                print(f"[PD] Pulse-Doppler ACTIVATED | N={n_pulses} PRF={prf_hz}Hz MTI={mti_order}")
+            else:
+                print("[PD] Pulse-Doppler DEACTIVATED → Parametric mode")
+        except Exception as e:
+            print(f"[PD] Engine update failed: {e}")
+
+    # ═══ PHASE 27: EKF TRACKING ═══
+
+    def set_ekf_mode(self, enabled: bool):
+        """
+        Set Extended Kalman Filter tracking mode.
+
+        When enabled, the tracker processes [r, θ] measurements directly
+        using the nonlinear EKF instead of the linear KF.
+
+        Args:
+            enabled: Whether to use EKF
+
+        Reference: Bar-Shalom (2001), Ch. 5.3
+        """
+        try:
+            if hasattr(self.engine, 'track_manager') and self.engine.track_manager is not None:
+                self.engine.track_manager.set_ekf_mode(enabled)
+                if enabled:
+                    print("[EKF] Extended Kalman Filter ACTIVATED (polar measurements)")
+                else:
+                    print("[EKF] Linear Kalman Filter (Cartesian measurements)")
+            else:
+                print("[EKF] Track manager not available")
+        except Exception as e:
+            print(f"[EKF] Engine update failed: {e}")
+
+    # ═══ PHASE 28: ELECTRONIC WARFARE ═══
+
+    def __init_eccm(self):
+        """Lazy-initialize ECCM controller."""
+        if not hasattr(self, '_eccm_controller'):
+            try:
+                from src.advanced.eccm import ECCMController
+                self._eccm_controller = ECCMController(
+                    center_freq_hz=getattr(self.engine, 'frequency_hz', 10e9),
+                    nominal_prf_hz=getattr(self.engine, 'prf_hz', 1000.0),
+                )
+            except ImportError:
+                self._eccm_controller = None
+
+    def _get_eccm_state(self) -> dict:
+        """Get ECCM state for UI."""
+        if hasattr(self, '_eccm_controller') and self._eccm_controller is not None:
+            return self._eccm_controller.get_status()
+        return {"jamming_active": False, "effective_jsr_db": -100}
+
+    def set_jamming_environment(self, enabled: bool) -> None:
+        """
+        Toggle jamming environment.
+
+        Args:
+            enabled: True to activate jamming
+        """
+        self.__init_eccm()
+        if self._eccm_controller:
+            self._eccm_controller.set_jamming_environment(enabled, jsr_db=20.0)
+            state = "ACTIVE (20 dB J/S)" if enabled else "OFF"
+            print(f"[EW] Jamming environment {state}")
+
+    def set_freq_agility(self, enabled: bool) -> None:
+        """
+        Toggle frequency agility ECCM.
+
+        Args:
+            enabled: True to enable
+        """
+        self.__init_eccm()
+        if self._eccm_controller:
+            if enabled:
+                self._eccm_controller.enable_frequency_agility()
+                print(f"[ECCM] Frequency Agility ON — J/S reduced by {self._eccm_controller.freq_agility.js_reduction_db:.0f} dB")
+            else:
+                self._eccm_controller.disable_frequency_agility()
+                print("[ECCM] Frequency Agility OFF")
+
+    def set_prf_stagger(self, enabled: bool) -> None:
+        """
+        Toggle PRF stagger ECCM.
+
+        Args:
+            enabled: True to enable
+        """
+        self.__init_eccm()
+        if self._eccm_controller:
+            if enabled:
+                self._eccm_controller.enable_prf_stagger()
+                print("[ECCM] PRF Stagger ON — ±5% jitter")
+            else:
+                self._eccm_controller.disable_prf_stagger()
+                print("[ECCM] PRF Stagger OFF")
 
 
 def create_demo_scenario() -> SimulationEngine:

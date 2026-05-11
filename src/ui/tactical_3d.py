@@ -85,6 +85,14 @@ class TacticalMap3D(QWidget):
         self.radar_marker: Optional[GLScatterPlotItem] = None
         self.beam_mesh: Optional[GLMeshItem] = None
 
+        # ═══ PHASE 27: EKF Uncertainty Ellipses ═══
+        self._ellipse_items: Dict[int, GLLinePlotItem] = {}
+
+        # ═══ PHASE 29: Network Fusion ═══
+        self._fused_scatter: Optional[GLScatterPlotItem] = None
+        self._fused_ellipse_items: Dict[int, GLLinePlotItem] = {}
+        self._jammer_scatter: Optional[GLScatterPlotItem] = None
+
         self._setup_ui()
 
     def _setup_ui(self) -> None:
@@ -290,7 +298,8 @@ class TacticalMap3D(QWidget):
         targets = state.get("targets", [])
 
         if not targets:
-            self.target_scatter.setData(pos=np.zeros((1, 3)), size=0)
+            if self.target_scatter is not None:
+                self.target_scatter.setData(pos=np.zeros((1, 3)), size=0)
             return
 
         # Build target positions and colors
@@ -360,7 +369,84 @@ class TacticalMap3D(QWidget):
             color_array = np.array(colors)
             size_array = np.array(sizes)
 
-            self.target_scatter.setData(pos=pos_array, size=size_array, color=color_array)
+            if self.target_scatter is not None:
+                self.target_scatter.setData(pos=pos_array, size=size_array, color=color_array)
+
+        # ═══ PHASE 27: EKF Uncertainty Ellipses ═══
+        self._render_uncertainty_ellipses(state)
+
+        # ═══ PHASE 29: Network Fusion Visualization ═══
+        self._render_fused_tracks(state)
+        self._render_jammer_positions(state)
+
+    def _render_uncertainty_ellipses(self, state: Dict[str, Any]) -> None:
+        """
+        Render EKF uncertainty ellipses around tracked targets.
+
+        Uses the position covariance P[0:2, 0:2] eigendecomposition
+        to draw 95% confidence ellipses in 3D space.
+
+        Reference: Bar-Shalom (2001), Appendix C
+        """
+        if not OPENGL_AVAILABLE:
+            return
+
+        # Remove stale ellipses
+        for item in self._ellipse_items.values():
+            try:
+                self.gl_view.removeItem(item)
+            except Exception:
+                pass
+        self._ellipse_items.clear()
+
+        tracks = state.get("tracks", [])
+        if not tracks:
+            return
+
+        # Import EKF for ellipse computation
+        try:
+            from src.tracking.ekf import ExtendedKalmanFilter
+        except ImportError:
+            return
+
+        for track_data in tracks:
+            track_id = track_data.get("id", -1)
+            covariance = track_data.get("covariance")
+            if covariance is None:
+                continue
+
+            P = np.array(covariance)
+            if P.shape != (4, 4):
+                continue
+
+            # Get track position in km
+            pos = track_data.get("position", [0, 0, 0])
+            if isinstance(pos, (list, np.ndarray)):
+                cx = pos[0] / 1000.0
+                cy = pos[1] / 1000.0
+                cz = pos[2] / 1000.0 if len(pos) > 2 else 0.0
+            else:
+                continue
+
+            # Compute ellipse points (in meters, then convert to km)
+            ellipse_pts = ExtendedKalmanFilter.uncertainty_ellipse(P, confidence=0.95, n_points=32)
+            ellipse_km = ellipse_pts / 1000.0  # Convert m → km
+
+            # Create 3D line at target altitude
+            pts_3d = np.zeros((len(ellipse_km) + 1, 3))
+            pts_3d[:-1, 0] = cx + ellipse_km[:, 0]
+            pts_3d[:-1, 1] = cy + ellipse_km[:, 1]
+            pts_3d[:-1, 2] = cz
+            pts_3d[-1] = pts_3d[0]  # Close the ellipse
+
+            line = gl.GLLinePlotItem(
+                pos=pts_3d,
+                color=(0.3, 1.0, 0.5, 0.6),
+                width=1.5,
+                antialias=True,
+            )
+            self.gl_view.addItem(line)
+            self._ellipse_items[track_id] = line
 
     def set_radar_position(self, x_km: float, y_km: float, z_km: float = 0.1) -> None:
         """Set radar position marker."""
@@ -388,8 +474,135 @@ class TacticalMap3D(QWidget):
         if OPENGL_AVAILABLE:
             self.gl_view.setCameraPosition(distance=distance, elevation=elevation, azimuth=azimuth)
 
+    # ═══════════════════════════════════════════════════════════════
+    # PHASE 29: NETWORK FUSION VISUALIZATION
+    # ═══════════════════════════════════════════════════════════════
 
-def create_demo_terrain() -> np.ndarray:
+    def _render_fused_tracks(self, state: Dict[str, Any]) -> None:
+        """
+        Render fused tracks from multi-radar CI fusion as gold symbols.
+
+        Also renders shrinking uncertainty ellipses to visualize
+        fusion gain (GDOP effect).
+
+        Reference: Julier & Uhlmann (1997); Blackman (1986)
+        """
+        if not OPENGL_AVAILABLE:
+            return
+
+        # Remove stale fused items
+        if self._fused_scatter is not None:
+            try:
+                self.gl_view.removeItem(self._fused_scatter)
+            except Exception:
+                pass
+        for item in self._fused_ellipse_items.values():
+            try:
+                self.gl_view.removeItem(item)
+            except Exception:
+                pass
+        self._fused_ellipse_items.clear()
+
+        network_data = state.get("network", {})
+        fused_tracks = network_data.get("fused_tracks", [])
+        if not fused_tracks:
+            return
+
+        positions = []
+        colors = []
+        for ft in fused_tracks:
+            s = ft.get("state", [0, 0, 0, 0])
+            x_km = s[0] / 1000.0
+            y_km = s[1] / 1000.0
+            z_km = 0.15  # Slightly above targets
+            positions.append([x_km, y_km, z_km])
+            # Gold color for fused tracks
+            colors.append((1.0, 0.84, 0.0, 0.95))
+
+        if positions:
+            self._fused_scatter = gl.GLScatterPlotItem(
+                pos=np.array(positions),
+                size=14,
+                color=np.array(colors),
+                pxMode=True,
+            )
+            self.gl_view.addItem(self._fused_scatter)
+
+            # Render fused covariance ellipses (gold, smaller)
+            try:
+                from src.tracking.ekf import ExtendedKalmanFilter
+            except ImportError:
+                return
+
+            for idx, ft in enumerate(fused_tracks):
+                cov = ft.get("covariance")
+                if cov is None:
+                    continue
+                P = np.array(cov)
+                if P.shape != (4, 4):
+                    continue
+
+                cx, cy = positions[idx][0], positions[idx][1]
+                cz = positions[idx][2]
+
+                ellipse_pts = ExtendedKalmanFilter.uncertainty_ellipse(
+                    P, confidence=0.95, n_points=32
+                )
+                ellipse_km = ellipse_pts / 1000.0
+
+                pts_3d = np.zeros((len(ellipse_km) + 1, 3))
+                pts_3d[:-1, 0] = cx + ellipse_km[:, 0]
+                pts_3d[:-1, 1] = cy + ellipse_km[:, 1]
+                pts_3d[:-1, 2] = cz
+                pts_3d[-1] = pts_3d[0]
+
+                line = gl.GLLinePlotItem(
+                    pos=pts_3d,
+                    color=(1.0, 0.84, 0.0, 0.7),  # Gold
+                    width=2.0,
+                    antialias=True,
+                )
+                self.gl_view.addItem(line)
+                self._fused_ellipse_items[idx] = line
+
+    def _render_jammer_positions(self, state: Dict[str, Any]) -> None:
+        """
+        Render triangulated jammer positions as magenta diamonds.
+
+        Reference: Poisel (2012)
+        """
+        if not OPENGL_AVAILABLE:
+            return
+
+        if self._jammer_scatter is not None:
+            try:
+                self.gl_view.removeItem(self._jammer_scatter)
+            except Exception:
+                pass
+
+        network_data = state.get("network", {})
+        jammer_locs = network_data.get("jammer_positions", [])
+        if not jammer_locs:
+            return
+
+        positions = []
+        for jloc in jammer_locs:
+            pos = jloc.get("position", [0, 0])
+            x_km = pos[0] / 1000.0
+            y_km = pos[1] / 1000.0
+            positions.append([x_km, y_km, 0.2])
+
+        if positions:
+            self._jammer_scatter = gl.GLScatterPlotItem(
+                pos=np.array(positions),
+                size=18,
+                color=(1.0, 0.0, 1.0, 0.9),  # Magenta
+                pxMode=True,
+            )
+            self.gl_view.addItem(self._jammer_scatter)
+
+
+def create_demo_terrain() -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
     """
     Create demo terrain data for testing.
 

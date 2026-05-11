@@ -21,6 +21,15 @@ import numpy as np
 
 from .kalman import KalmanState, LinearKalmanFilter
 
+# Extended Kalman Filter (Phase 27)
+try:
+    from .ekf import ExtendedKalmanFilter
+
+    EKF_AVAILABLE = True
+except ImportError:
+    EKF_AVAILABLE = False
+    ExtendedKalmanFilter = None
+
 
 class TrackStatus(Enum):
     """Track lifecycle states."""
@@ -135,6 +144,10 @@ class TrackManager:
             process_noise=process_noise, measurement_noise=measurement_noise
         )
 
+        # ═══ PHASE 27: EKF Support ═══
+        self.use_ekf = False
+        self._ekf: Optional["ExtendedKalmanFilter"] = None
+
         # Track storage
         self.tracks: Dict[int, Track] = {}
         self._next_id = 1
@@ -169,7 +182,10 @@ class TrackManager:
         # 1. Predict all tracks
         for track in self.tracks.values():
             if track.status != TrackStatus.DELETED:
-                track.state = self.kf.predict(track.state, dt)
+                if self.use_ekf and self._ekf is not None:
+                    track.state = self._ekf.predict(track.state, dt)
+                else:
+                    track.state = self.kf.predict(track.state, dt)
 
         # 2. Data association (Nearest-Neighbor with gating)
         associations, unassigned_detections, unassigned_tracks = self._associate(detections)
@@ -179,8 +195,11 @@ class TrackManager:
             track = self.tracks[track_id]
             measurement = detections[det_idx]
 
-            # Kalman update
-            track.state = self.kf.update(track.state, measurement)
+            # Kalman update (EKF or Linear)
+            if self.use_ekf and self._ekf is not None:
+                track.state = self._ekf.update_cartesian(track.state, measurement)
+            else:
+                track.state = self.kf.update(track.state, measurement)
             track.last_update = current_time
             track.hits += 1
             track.misses = 0
@@ -316,3 +335,121 @@ class TrackManager:
         """Clear all tracks."""
         self.tracks.clear()
         self._next_id = 1
+
+    # ═══ PHASE 27: EKF Control ═══
+
+    def set_ekf_mode(self, enabled: bool) -> None:
+        """
+        Enable/disable Extended Kalman Filter for polar measurements.
+
+        When enabled, the EKF processes [r, θ] measurements directly
+        without pre-converting to Cartesian coordinates.
+
+        Args:
+            enabled: True to use EKF, False for linear KF
+
+        Reference: Bar-Shalom (2001), Ch. 5.3
+        """
+        self.use_ekf = enabled and EKF_AVAILABLE
+        if self.use_ekf and self._ekf is None:
+            self._ekf = ExtendedKalmanFilter(
+                process_noise=self.kf.process_noise,
+                range_std=self.kf.measurement_noise,
+                angle_std=0.02,  # ~1.15°
+                snr_adapt=True,
+            )
+
+    def update_polar(
+        self,
+        polar_detections: List[Tuple[float, float]],
+        dt: float,
+        snr_values: Optional[List[float]] = None,
+    ) -> List[Track]:
+        """
+        Update tracks with polar [r, θ] detections from Pulse-Doppler engine.
+
+        Feeds raw polar measurements directly to EKF without
+        Cartesian pre-conversion.
+
+        Args:
+            polar_detections: List of (range_m, azimuth_rad)
+            dt: Time step [s]
+            snr_values: Optional SNR [dB] for each detection
+
+        Returns:
+            List of active tracks
+
+        Reference: Richards (2005), Bar-Shalom (2001)
+        """
+        if not self.use_ekf or self._ekf is None:
+            # Fallback: convert to Cartesian and use standard update
+            cartesian = [
+                (r * np.cos(theta), r * np.sin(theta))
+                for r, theta in polar_detections
+            ]
+            return self.update(cartesian, dt)
+
+        current_time = time.time()
+
+        # 1. Predict all tracks
+        for track in self.tracks.values():
+            if track.status != TrackStatus.DELETED:
+                track.state = self._ekf.predict(track.state, dt)
+
+        # 2. Convert polar to Cartesian for association only
+        cartesian_dets = [
+            (r * np.cos(theta), r * np.sin(theta))
+            for r, theta in polar_detections
+        ]
+
+        # 3. Data association (in Cartesian space)
+        associations, unassigned_dets, unassigned_tracks = self._associate(cartesian_dets)
+
+        # 4. Update associated tracks with polar measurements
+        for track_id, det_idx in associations.items():
+            track = self.tracks[track_id]
+            z_polar = polar_detections[det_idx]
+            snr = snr_values[det_idx] if snr_values and det_idx < len(snr_values) else 20.0
+
+            track.state = self._ekf.update(track.state, z_polar, snr_db=snr)
+            track.last_update = current_time
+            track.hits += 1
+            track.misses = 0
+
+            if track.status == TrackStatus.TENTATIVE and track.hits >= self.confirm_hits:
+                track.status = TrackStatus.CONFIRMED
+            elif track.status == TrackStatus.COASTING:
+                track.status = TrackStatus.CONFIRMED
+
+            track.history.append(track.position)
+            if len(track.history) > self.max_history:
+                track.history.pop(0)
+
+        # 5. Coast unassigned tracks
+        for track_id in unassigned_tracks:
+            track = self.tracks[track_id]
+            track.misses += 1
+            if track.status == TrackStatus.CONFIRMED:
+                track.status = TrackStatus.COASTING
+            if track.misses > self.max_misses:
+                track.status = TrackStatus.DELETED
+            track.history.append(track.position)
+            if len(track.history) > self.max_history:
+                track.history.pop(0)
+
+        # 6. Initiate new tracks from unassigned detections
+        for det_idx in unassigned_dets:
+            r_m, theta_rad = polar_detections[det_idx]
+            state = self._ekf.initialize_from_polar(r_m, theta_rad)
+            track = Track(id=self._next_id, state=state, status=TrackStatus.TENTATIVE)
+            cart_pos = (r_m * np.cos(theta_rad), r_m * np.sin(theta_rad))
+            track.history.append(cart_pos)
+            self.tracks[self._next_id] = track
+            self._next_id += 1
+
+        # 7. Remove deleted tracks
+        self.tracks = {
+            tid: t for tid, t in self.tracks.items() if t.status != TrackStatus.DELETED
+        }
+
+        return list(self.tracks.values())
