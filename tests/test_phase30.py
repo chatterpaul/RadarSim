@@ -62,9 +62,9 @@ class TestSARResolution:
 
     def test_range_resolution_in_rda(self):
         """RDA must report correct range resolution."""
-        raw = np.random.default_rng(42).standard_normal((256, 64)) + 1j * np.random.default_rng(
-            43
-        ).standard_normal((256, 64))
+        raw = np.random.default_rng(42).standard_normal(
+            (256, 64)
+        ) + 1j * np.random.default_rng(43).standard_normal((256, 64))
         result = rda_vectorized(
             raw,
             bandwidth_hz=100e6,
@@ -177,9 +177,9 @@ class TestISARProcessor:
         delta_theta = rotation_rate * T_cpi
         expected_cr = wavelength / (2 * delta_theta)
 
-        cpi = np.random.default_rng(42).standard_normal((64, 256)) + 1j * np.random.default_rng(
-            43
-        ).standard_normal((64, 256))
+        cpi = np.random.default_rng(42).standard_normal(
+            (64, 256)
+        ) + 1j * np.random.default_rng(43).standard_normal((64, 256))
         result = isar.process_isar(cpi, rotation_rate_rps=rotation_rate)
         assert abs(result.azimuth_resolution_m - expected_cr) < 0.01
 

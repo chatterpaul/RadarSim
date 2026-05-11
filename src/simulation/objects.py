@@ -76,7 +76,9 @@ class KinematicState:
         if len(self.velocity) == 2:
             self.velocity = np.array([self.velocity[0], self.velocity[1], 0.0])
         if len(self.acceleration) == 2:
-            self.acceleration = np.array([self.acceleration[0], self.acceleration[1], 0.0])
+            self.acceleration = np.array(
+                [self.acceleration[0], self.acceleration[1], 0.0]
+            )
 
     def to_state_vector(self) -> np.ndarray:
         """Return full 9-element state vector."""
@@ -86,9 +88,13 @@ class KinematicState:
     def from_state_vector(cls, state: np.ndarray) -> "KinematicState":
         """Create from 9-element state vector."""
         if len(state) == 6:
-            return cls(position=state[0:3], velocity=state[3:6], acceleration=np.zeros(3))
+            return cls(
+                position=state[0:3], velocity=state[3:6], acceleration=np.zeros(3)
+            )
         elif len(state) == 9:
-            return cls(position=state[0:3], velocity=state[3:6], acceleration=state[6:9])
+            return cls(
+                position=state[0:3], velocity=state[3:6], acceleration=state[6:9]
+            )
         else:
             raise ValueError(f"State vector must be 6 or 9 elements, got {len(state)}")
 
@@ -242,7 +248,9 @@ class Target:
             pass
 
         elif self.motion_model == MotionModel.CONSTANT_VELOCITY:
-            new_pos, new_vel = _update_kinematics_cv(self.state.position, self.state.velocity, dt)
+            new_pos, new_vel = _update_kinematics_cv(
+                self.state.position, self.state.velocity, dt
+            )
             self.state.position = new_pos
             self.state.velocity = new_vel
 
@@ -388,7 +396,9 @@ class Radar:
         """
         # Update position if moving
         if np.any(self.state.velocity != 0):
-            new_pos, _ = _update_kinematics_cv(self.state.position, self.state.velocity, dt)
+            new_pos, _ = _update_kinematics_cv(
+                self.state.position, self.state.velocity, dt
+            )
             self.state.position = new_pos
 
         # Update antenna azimuth (scanning)

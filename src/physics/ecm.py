@@ -274,7 +274,11 @@ class ECMSimulator:
         return 10 * np.log10(max(jsr_linear, 1e-10))
 
     def generate_noise_strobes(
-        self, n_range_bins: int, n_azimuth_bins: int, jammer_azimuth_deg: float, jsr_db: float
+        self,
+        n_range_bins: int,
+        n_azimuth_bins: int,
+        jammer_azimuth_deg: float,
+        jsr_db: float,
     ) -> np.ndarray:
         """
         Generate noise jamming strobes for display.
@@ -314,7 +318,9 @@ class ECMSimulator:
         for i in range(-half_width, half_width + 1):
             az_bin = (jammer_bin + i) % n_azimuth_bins
             # Use pre-generated uniform noise instead of exponential (faster)
-            strobes[:, az_bin] = intensity * (0.25 + 0.5 * np.random.random(n_range_bins))
+            strobes[:, az_bin] = intensity * (
+                0.25 + 0.5 * np.random.random(n_range_bins)
+            )
 
         return strobes
 
@@ -406,7 +412,12 @@ class ECMSimulator:
 
         numerator = radar_power_watts * radar_gain_linear * target_rcs_m2
         denominator = (
-            jammer_power_watts * jammer_gain_linear * 4 * np.pi * required_snr_linear * bw_ratio
+            jammer_power_watts
+            * jammer_gain_linear
+            * 4
+            * np.pi
+            * required_snr_linear
+            * bw_ratio
         )
 
         if denominator > 1e-30:
@@ -613,7 +624,9 @@ class DRFMJammer:
             false_velocity_mps = true_velocity_mps
         else:  # VGPO
             false_range_m = true_range_m
-            false_velocity_mps = true_velocity_mps + self._pull_offset_hz * wavelength_m / 2.0
+            false_velocity_mps = (
+                true_velocity_mps + self._pull_offset_hz * wavelength_m / 2.0
+            )
 
         # J/S gain: jammer is stronger than skin return
         jammer_amplitude = amplitude * 10.0 ** (self.config.gain_over_skin_db / 20.0)
@@ -676,7 +689,9 @@ class DRFMJammer:
         }
 
 
-def calculate_jamming_effectiveness(jsr_db: float, detection_threshold_db: float = 13.0) -> float:
+def calculate_jamming_effectiveness(
+    jsr_db: float, detection_threshold_db: float = 13.0
+) -> float:
     """
     Calculate jamming effectiveness as probability of mask.
 

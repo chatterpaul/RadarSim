@@ -140,7 +140,9 @@ class ModelTrainer:
         X_test_scaled = self.scaler.transform(X_test)
 
         # Train model
-        print(f"\nTraining RandomForestClassifier (n_estimators={self.n_estimators})...")
+        print(
+            f"\nTraining RandomForestClassifier (n_estimators={self.n_estimators})..."
+        )
         start_time = time.perf_counter()
 
         self.model = RandomForestClassifier(
@@ -184,7 +186,7 @@ class ModelTrainer:
         print("=" * 60)
 
         print(
-            f"\n  Accuracy:  {self.metrics['accuracy']:.4f} ({self.metrics['accuracy']*100:.1f}%)"
+            f"\n  Accuracy:  {self.metrics['accuracy']:.4f} ({self.metrics['accuracy'] * 100:.1f}%)"
         )
         print(f"  Precision: {self.metrics['precision_macro']:.4f}")
         print(f"  Recall:    {self.metrics['recall_macro']:.4f}")
@@ -222,7 +224,9 @@ class ModelTrainer:
         # Feature importances
         if self.model is not None:
             print("\nFeature Importances:")
-            for name, importance in zip(self.FEATURE_COLUMNS, self.model.feature_importances_):
+            for name, importance in zip(
+                self.FEATURE_COLUMNS, self.model.feature_importances_
+            ):
                 bar = "█" * int(importance * 40)
                 print(f"  {name:>12}: {importance:.3f} {bar}")
 
@@ -310,9 +314,11 @@ def main():
     print("=" * 60)
 
     if metrics["accuracy"] >= 0.85:
-        print(f"\n✓ Target accuracy achieved: {metrics['accuracy']*100:.1f}% >= 85%")
+        print(f"\n✓ Target accuracy achieved: {metrics['accuracy'] * 100:.1f}% >= 85%")
     else:
-        print(f"\n⚠ Target accuracy NOT achieved: {metrics['accuracy']*100:.1f}% < 85%")
+        print(
+            f"\n⚠ Target accuracy NOT achieved: {metrics['accuracy'] * 100:.1f}% < 85%"
+        )
 
 
 if __name__ == "__main__":

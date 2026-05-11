@@ -166,7 +166,9 @@ class ScenarioLoader:
             environment=environment,
             enable_atmospheric_loss=sim_params.get("enable_atmospheric_loss", True),
             enable_clutter=sim_params.get("enable_clutter", False),
-            detection_threshold_db=float(sim_params.get("pfa", 1e-6)),  # Will be converted
+            detection_threshold_db=float(
+                sim_params.get("pfa", 1e-6)
+            ),  # Will be converted
         )
 
     def _parse_radar(self) -> RadarConfig:
@@ -187,7 +189,11 @@ class ScenarioLoader:
             pulse_width_s=float(radar.get("pulse_width_s", 1e-6)),
             noise_figure_db=float(receiver.get("noise_figure_db", 4.0)),
             position=np.array(
-                [float(pos.get("x_m", 0)), float(pos.get("y_m", 0)), float(pos.get("z_m", 0))]
+                [
+                    float(pos.get("x_m", 0)),
+                    float(pos.get("y_m", 0)),
+                    float(pos.get("z_m", 0)),
+                ]
             ),
         )
 
@@ -305,7 +311,9 @@ class ScenarioLoader:
                 3: SwerlingModel.SWERLING_3,
                 4: SwerlingModel.SWERLING_4,
             }
-            swerling = swerling_map.get(t_config.swerling_model, SwerlingModel.SWERLING_1)
+            swerling = swerling_map.get(
+                t_config.swerling_model, SwerlingModel.SWERLING_1
+            )
 
             # Determine motion model from velocity
             is_static = np.allclose(t_config.velocity, 0)

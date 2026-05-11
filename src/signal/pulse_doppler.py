@@ -128,7 +128,9 @@ class PulseDopplerProcessor:
         # Velocity axis [m/s] (centered, after fftshift)
         doppler_resolution_hz = prf_hz / n_pulses
         velocity_resolution_mps = self.wavelength_m * doppler_resolution_hz / 2.0
-        self.velocity_axis_mps = (np.arange(n_pulses) - n_pulses / 2) * velocity_resolution_mps
+        self.velocity_axis_mps = (
+            np.arange(n_pulses) - n_pulses / 2
+        ) * velocity_resolution_mps
 
         # Blind speeds (first 3 ambiguities)
         v_blind_1 = self.wavelength_m * prf_hz / 2.0
@@ -181,7 +183,9 @@ class PulseDopplerProcessor:
         if n_targets == 0:
             # Noise-only CPI
             noise_std = np.sqrt(noise_power / 2.0)
-            cpi = noise_std * (rng.standard_normal(cpi.shape) + 1j * rng.standard_normal(cpi.shape))
+            cpi = noise_std * (
+                rng.standard_normal(cpi.shape) + 1j * rng.standard_normal(cpi.shape)
+            )
             return cpi
 
         # Pulse indices: n = [0, 1, ..., N-1], shape [n_pulses, 1]
@@ -223,7 +227,9 @@ class PulseDopplerProcessor:
 
         # Add AWGN (complex Gaussian noise)
         noise_std = np.sqrt(noise_power / 2.0)
-        cpi += noise_std * (rng.standard_normal(cpi.shape) + 1j * rng.standard_normal(cpi.shape))
+        cpi += noise_std * (
+            rng.standard_normal(cpi.shape) + 1j * rng.standard_normal(cpi.shape)
+        )
 
         return cpi
 

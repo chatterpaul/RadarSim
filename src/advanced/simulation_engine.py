@@ -99,7 +99,9 @@ class AdvancedRadarSimulationEngine:
         )
 
         self.lpi_radar = AdvancedLPIRadar(
-            fc=config.radar_frequency, bandwidth=config.radar_bandwidth, power=config.radar_power
+            fc=config.radar_frequency,
+            bandwidth=config.radar_bandwidth,
+            power=config.radar_power,
         )
 
         self.sar_processor = AdvancedSARISAR(
@@ -210,11 +212,14 @@ class AdvancedRadarSimulationEngine:
 
         # LPI dalga şekli
         if self.config.lpi_enabled:
-            lpi_waveform = self.lpi_radar.generate_lpi_waveform(technique=self.config.lpi_technique)
+            lpi_waveform = self.lpi_radar.generate_lpi_waveform(
+                technique=self.config.lpi_technique
+            )
         else:
             # Standart chirp sinyal
             lpi_waveform = self.signal_processor.generate_chirp_signal(
-                start_freq=self.config.radar_frequency - self.config.radar_bandwidth / 2,
+                start_freq=self.config.radar_frequency
+                - self.config.radar_bandwidth / 2,
                 end_freq=self.config.radar_frequency + self.config.radar_bandwidth / 2,
             )
 
@@ -222,7 +227,9 @@ class AdvancedRadarSimulationEngine:
         detections = []
         for target in self.state.targets:
             # Menzil hesaplama
-            range_to_target = np.linalg.norm(target["position"] - self.state.radar_position)
+            range_to_target = np.linalg.norm(
+                target["position"] - self.state.radar_position
+            )
 
             # Radar denklemi
             received_power = self.calculate_received_power(
@@ -279,7 +286,9 @@ class AdvancedRadarSimulationEngine:
         target_rcs = np.array([t["rcs"] for t in self.state.targets])
 
         # SAR ham veri üretimi
-        raw_data = self.sar_processor.generate_sar_raw_data(target_positions, target_rcs)
+        raw_data = self.sar_processor.generate_sar_raw_data(
+            target_positions, target_rcs
+        )
 
         # SAR görüntü işleme
         sar_image = self.sar_processor.range_doppler_algorithm(raw_data)
@@ -341,7 +350,9 @@ class AdvancedRadarSimulationEngine:
             for target in self.state.targets:
                 distance = np.linalg.norm(missile["position"] - target["position"])
                 if distance < 10:  # 10m çarpışma mesafesi
-                    self.logger.info(f"Çarpışma tespit edildi: {target.get('id', 'unknown')}")
+                    self.logger.info(
+                        f"Çarpışma tespit edildi: {target.get('id', 'unknown')}"
+                    )
                     # Hedef ve füze kaldır
                     if target in self.state.targets:
                         self.state.targets.remove(target)
@@ -396,7 +407,10 @@ class AdvancedRadarSimulationEngine:
         # Füzeler
         missiles_data = []
         for missile in self.state.missiles:
-            missile_data = {"position": missile["position"], "velocity": missile["velocity"]}
+            missile_data = {
+                "position": missile["position"],
+                "velocity": missile["velocity"],
+            }
             missiles_data.append(missile_data)
 
         if missiles_data:
@@ -413,7 +427,9 @@ class AdvancedRadarSimulationEngine:
         self.renderer.ax.set_xlabel("X (m)")
         self.renderer.ax.set_ylabel("Y (m)")
         self.renderer.ax.set_zlabel("Z (m)")
-        self.renderer.ax.set_title(f"Radar Simulation - Time: {self.state.timestamp:.1f}s")
+        self.renderer.ax.set_title(
+            f"Radar Simulation - Time: {self.state.timestamp:.1f}s"
+        )
 
         plt.pause(0.001)
 
@@ -552,8 +568,12 @@ class AdvancedRadarSimulationEngine:
             "max_fps": np.max(fps_values) if fps_values else 0,
             "average_targets": np.mean(target_counts),
             "total_detections": sum(detection_counts),
-            "ecm_activations": sum(1 for log in self.performance_log if log["ecm_active"]),
-            "memory_usage_mb": np.mean([log["memory_usage"] for log in self.performance_log]),
+            "ecm_activations": sum(
+                1 for log in self.performance_log if log["ecm_active"]
+            ),
+            "memory_usage_mb": np.mean(
+                [log["memory_usage"] for log in self.performance_log]
+            ),
         }
 
         self.logger.info(f"Performans raporu: {report}")

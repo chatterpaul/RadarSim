@@ -87,7 +87,9 @@ class PhasedArrayAntenna:
         )
 
     @staticmethod
-    def _compute_weights(n_elements: int, weighting: str, sidelobe_db: float) -> np.ndarray:
+    def _compute_weights(
+        n_elements: int, weighting: str, sidelobe_db: float
+    ) -> np.ndarray:
         """
         Compute aperture weights for sidelobe control.
 
@@ -135,7 +137,11 @@ class PhasedArrayAntenna:
                         y = A**2 + (m - 0.5) ** 2
                         denominator *= 1 - x / y if y != 0 else 1
 
-                F_m = ((-1) ** (m + 1)) * numerator / (2 * denominator) if denominator != 0 else 0
+                F_m = (
+                    ((-1) ** (m + 1)) * numerator / (2 * denominator)
+                    if denominator != 0
+                    else 0
+                )
 
                 for i, nc in enumerate(n_centered):
                     weights[i] *= 1 + 2 * F_m * np.cos(2 * np.pi * m * nc / n_elements)

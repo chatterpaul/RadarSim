@@ -48,7 +48,7 @@ def example_basic_radar():
     doppler_hz = physics.doppler_shift(target, radar_pos, radar_vel)
 
     print("=== Basic Radar Example ===")
-    print(f"Target Range: {range_m/1000:.1f} km")
+    print(f"Target Range: {range_m / 1000:.1f} km")
     print(f"SNR: {snr_db:.1f} dB")
     print(f"Doppler Shift: {doppler_hz:.0f} Hz")
     print(f"Radial Velocity: {doppler_hz * radar_params.wavelength / 2:.1f} m/s")
@@ -141,7 +141,7 @@ def example_ekf_tracking():
     for step in range(5):
         # Predict
         track = ekf.predict(track)
-        print(f"Step {step+1} - Predicted X: {track.position[0]:.1f} m")
+        print(f"Step {step + 1} - Predicted X: {track.position[0]:.1f} m")
 
 
 def example_ecm_simulation():
@@ -156,12 +156,16 @@ def example_ecm_simulation():
     print("\n=== ECM Simulation Example ===")
 
     # Setup
-    radar_params = RadarParameters(frequency=10e9, power_transmitted=1000, antenna_gain_tx=30)
+    radar_params = RadarParameters(
+        frequency=10e9, power_transmitted=1000, antenna_gain_tx=30
+    )
     physics = RadarPhysics(radar_params)
     ecm = ECMSimulator(physics)
 
     target = TargetParameters(
-        position=np.array([15000.0, 0.0, 5000.0]), velocity=np.array([-150.0, 0.0, 0.0]), rcs=10.0
+        position=np.array([15000.0, 0.0, 5000.0]),
+        velocity=np.array([-150.0, 0.0, 0.0]),
+        rcs=10.0,
     )
 
     radar_pos = np.array([0.0, 0.0, 0.0])
@@ -172,7 +176,9 @@ def example_ecm_simulation():
 
     # Activate noise jamming
     ecm.activate_noise_jamming(
-        jammer_position=np.array([14000.0, 0.0, 5000.0]), jammer_power=500.0, frequency_offset=0.0
+        jammer_position=np.array([14000.0, 0.0, 5000.0]),
+        jammer_power=500.0,
+        frequency_offset=0.0,
     )
 
     # Calculate jammed signal
@@ -182,7 +188,9 @@ def example_ecm_simulation():
 
     # Jamming effectiveness
     jamming_loss_db = (
-        10 * np.log10(received_power / jammed_power) if jammed_power > 0 else float("inf")
+        10 * np.log10(received_power / jammed_power)
+        if jammed_power > 0
+        else float("inf")
     )
     print(f"Jamming Loss: {jamming_loss_db:.1f} dB")
 
@@ -191,7 +199,7 @@ def example_ecm_simulation():
 
     for t in range(5):
         offset = ecm.update_rgpo(1.0)
-        print(f"RGPO t={t+1}s: Range Offset = {offset:.0f} m")
+        print(f"RGPO t={t + 1}s: Range Offset = {offset:.0f} m")
 
 
 def example_cfar_detection():

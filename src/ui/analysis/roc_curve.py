@@ -171,7 +171,9 @@ class ROCCurveWidget(QWidget):
 
         layout.addWidget(QLabel("Current Pd @ Pfa=1e-6:"), row, 0)
         self.pd_label = QLabel("--")
-        self.pd_label.setStyleSheet("color: #00ffaa; font-weight: bold; font-size: 14px;")
+        self.pd_label.setStyleSheet(
+            "color: #00ffaa; font-weight: bold; font-size: 14px;"
+        )
         layout.addWidget(self.pd_label, row, 1, 1, 2)
         row += 1
 
@@ -225,7 +227,13 @@ class ROCCurveWidget(QWidget):
 
             # Create curve placeholders
             self.roc_curves = {}
-            colors = {5: "#ff5555", 10: "#ffaa00", 13: "#00ff88", 15: "#00aaff", 20: "#aa55ff"}
+            colors = {
+                5: "#ff5555",
+                10: "#ffaa00",
+                13: "#00ff88",
+                15: "#00aaff",
+                20: "#aa55ff",
+            }
             for snr, color in colors.items():
                 self.roc_curves[snr] = self.plot_widget.plot(
                     [], [], pen=pg.mkPen(color=color, width=2), name=f"{snr} dB"
@@ -238,7 +246,9 @@ class ROCCurveWidget(QWidget):
 
             # Threshold line
             self.threshold_line = pg.InfiniteLine(
-                pos=1e-6, angle=90, pen=pg.mkPen("#ffff00", width=1, style=Qt.PenStyle.DashLine)
+                pos=1e-6,
+                angle=90,
+                pen=pg.mkPen("#ffff00", width=1, style=Qt.PenStyle.DashLine),
             )
             self.plot_widget.addItem(self.threshold_line)
 
@@ -291,8 +301,10 @@ class ROCCurveWidget(QWidget):
             return
 
         # Calculate Pd at current SNR
-        pd = calculate_pd_swerling(self.current_snr_db, pfa=1e-6, swerling_case=self.swerling_case)
-        self.pd_label.setText(f"{pd:.3f} ({pd*100:.1f}%)")
+        pd = calculate_pd_swerling(
+            self.current_snr_db, pfa=1e-6, swerling_case=self.swerling_case
+        )
+        self.pd_label.setText(f"{pd:.3f} ({pd * 100:.1f}%)")
 
         # Required SNR for Pd=0.9
         from src.physics.metrics import albersheim_snr
@@ -306,7 +318,9 @@ class ROCCurveWidget(QWidget):
             return
 
         pfa = self.current_pfa
-        pd = calculate_pd_swerling(self.current_snr_db, pfa=pfa, swerling_case=self.swerling_case)
+        pd = calculate_pd_swerling(
+            self.current_snr_db, pfa=pfa, swerling_case=self.swerling_case
+        )
 
         self.operating_point.setData([pfa], [pd])
 

@@ -58,11 +58,19 @@ class Advanced3DRenderer:
         self.ax.set_zlabel("Z (m)")
         self.ax.set_title("Gelişmiş Radar Arayıcı Başlık Simülasyonu - 3D Görünüm")
 
-    def plot_radar_system(self, radar_pos: np.ndarray, radar_range: float = 500) -> None:
+    def plot_radar_system(
+        self, radar_pos: np.ndarray, radar_range: float = 500
+    ) -> None:
         """Radar sistemini 3D'de çizer"""
         # Radar pozisyonu
         self.ax.scatter(
-            radar_pos[0], radar_pos[1], radar_pos[2], c="red", s=100, marker="^", label="Radar"
+            radar_pos[0],
+            radar_pos[1],
+            radar_pos[2],
+            c="red",
+            s=100,
+            marker="^",
+            label="Radar",
         )
 
         # Radar menzil küresi
@@ -96,9 +104,15 @@ class Advanced3DRenderer:
         )
 
         # Beam konisi
-        cone_points = self.generate_beam_cone(radar_pos, beam_direction, beam_width, beam_range)
+        cone_points = self.generate_beam_cone(
+            radar_pos, beam_direction, beam_width, beam_range
+        )
         self.ax.plot_trisurf(
-            cone_points[:, 0], cone_points[:, 1], cone_points[:, 2], alpha=0.2, color="red"
+            cone_points[:, 0],
+            cone_points[:, 1],
+            cone_points[:, 2],
+            alpha=0.2,
+            color="red",
         )
 
     def plot_targets(self, targets: List[Dict[str, Any]]) -> None:
@@ -111,7 +125,13 @@ class Advanced3DRenderer:
             # Hedef pozisyonu
             color = self.get_target_color(target_type)
             self.ax.scatter(
-                pos[0], pos[1], pos[2], c=color, s=50, marker="o", label=f"Target ({target_type})"
+                pos[0],
+                pos[1],
+                pos[2],
+                c=color,
+                s=50,
+                marker="o",
+                label=f"Target ({target_type})",
             )
 
             # Hız vektörü
@@ -133,7 +153,9 @@ class Advanced3DRenderer:
             vel = missile["velocity"]
 
             # Füze pozisyonu
-            self.ax.scatter(pos[0], pos[1], pos[2], c="orange", s=30, marker="s", label="Missile")
+            self.ax.scatter(
+                pos[0], pos[1], pos[2], c="orange", s=30, marker="s", label="Missile"
+            )
 
             # Füze hız vektörü
             if np.linalg.norm(vel) > 0:
@@ -235,7 +257,10 @@ class Advanced3DRenderer:
         fig.update_layout(
             title="Interactive 3D Radar Simulation",
             scene=dict(
-                xaxis_title="X (m)", yaxis_title="Y (m)", zaxis_title="Z (m)", aspectmode="cube"
+                xaxis_title="X (m)",
+                yaxis_title="Y (m)",
+                zaxis_title="Z (m)",
+                aspectmode="cube",
             ),
             width=800,
             height=600,

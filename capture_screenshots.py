@@ -108,7 +108,10 @@ def capture_screenshots():
 
                 # Capture each tab
                 QTimer.singleShot(
-                    500, lambda: take_screenshot("recording_analysis", window.analysis_window)
+                    500,
+                    lambda: take_screenshot(
+                        "recording_analysis", window.analysis_window
+                    ),
                 )
 
                 def capture_ambiguity():
@@ -155,7 +158,9 @@ def capture_screenshots():
                 sar_dialog = SARViewer(window)
                 sar_dialog.show()
                 sar_dialog.resize(700, 600)
-                QTimer.singleShot(1000, lambda: take_screenshot("sar_viewer", sar_dialog))
+                QTimer.singleShot(
+                    1000, lambda: take_screenshot("sar_viewer", sar_dialog)
+                )
             except Exception as e:
                 print(f"  SAR capture failed: {e}")
 

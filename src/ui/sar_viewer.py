@@ -185,7 +185,9 @@ class SARViewer(QDialog):
             image_layout.addWidget(self.plot_widget)
         else:
             # Fallback if pyqtgraph not available
-            fallback_label = QLabel("PyQtGraph not available.\nInstall with: pip install pyqtgraph")
+            fallback_label = QLabel(
+                "PyQtGraph not available.\nInstall with: pip install pyqtgraph"
+            )
             fallback_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
             image_layout.addWidget(fallback_label)
             self.image_item = None
@@ -268,7 +270,9 @@ class SARViewer(QDialog):
 
         layout.addLayout(button_layout)
 
-    def update_image(self, data: np.ndarray, metrics: Optional[Dict[str, float]] = None) -> None:
+    def update_image(
+        self, data: np.ndarray, metrics: Optional[Dict[str, float]] = None
+    ) -> None:
         """
         Update the displayed SAR image.
 
@@ -372,8 +376,12 @@ class SARViewer(QDialog):
 
             for target in self._targets:
                 pos = target.position
-                target_positions.append([pos[0], pos[1], pos[2] if len(pos) > 2 else 0.0])
-                target_rcs.append(target.rcs_mean if hasattr(target, "rcs_mean") else 1.0)
+                target_positions.append(
+                    [pos[0], pos[1], pos[2] if len(pos) > 2 else 0.0]
+                )
+                target_rcs.append(
+                    target.rcs_mean if hasattr(target, "rcs_mean") else 1.0
+                )
 
             target_positions = np.array(target_positions)
             target_rcs = np.array(target_rcs)
@@ -402,7 +410,9 @@ class SARViewer(QDialog):
 
             # Update algorithm info labels
             self.algo_label.setText("Algorithm: Range-Doppler")
-            self.bandwidth_label.setText(f"Bandwidth: {self._radar_bandwidth/1e6:.0f} MHz")
+            self.bandwidth_label.setText(
+                f"Bandwidth: {self._radar_bandwidth / 1e6:.0f} MHz"
+            )
             self.aperture_label.setText(f"Targets: {len(self._targets)}")
 
             # Display the image
@@ -572,7 +582,10 @@ class SARViewer(QDialog):
             return
 
         filepath, _ = QFileDialog.getSaveFileName(
-            self, "Export SAR Image", "sar_image.png", "PNG Files (*.png);;All Files (*)"
+            self,
+            "Export SAR Image",
+            "sar_image.png",
+            "PNG Files (*.png);;All Files (*)",
         )
 
         if filepath:
@@ -585,7 +598,12 @@ class SARViewer(QDialog):
                 # Plot image
                 data_db = 20 * np.log10(np.abs(self.image_data) + 1e-10)
                 im = ax.imshow(
-                    data_db.T, cmap="viridis", aspect="auto", origin="lower", vmin=-60, vmax=0
+                    data_db.T,
+                    cmap="viridis",
+                    aspect="auto",
+                    origin="lower",
+                    vmin=-60,
+                    vmax=0,
                 )
 
                 ax.set_xlabel("Cross-Range (m)")

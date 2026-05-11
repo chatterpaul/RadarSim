@@ -36,7 +36,8 @@ def load_config_from_yaml(filepath: str) -> SimulationConfig:
 
     radar = data.get("radar", {})
     target = data.get(
-        "target", data.get("targets", [{}])[0] if isinstance(data.get("targets"), list) else {}
+        "target",
+        data.get("targets", [{}])[0] if isinstance(data.get("targets"), list) else {},
     )
     sim = data.get("simulation", {})
 
@@ -64,20 +65,30 @@ def main():
     parser = argparse.ArgumentParser(description="Run headless radar simulation")
 
     # Config file
-    parser.add_argument("--config", type=str, default=None, help="YAML configuration file")
+    parser.add_argument(
+        "--config", type=str, default=None, help="YAML configuration file"
+    )
 
     # Target parameters
     parser.add_argument(
         "--range", type=float, default=50.0, help="Target range in km (default: 50)"
     )
-    parser.add_argument("--rcs", type=float, default=1.0, help="Target RCS in m² (default: 1.0)")
     parser.add_argument(
-        "--velocity", type=float, default=0.0, help="Target radial velocity in m/s (default: 0)"
+        "--rcs", type=float, default=1.0, help="Target RCS in m² (default: 1.0)"
+    )
+    parser.add_argument(
+        "--velocity",
+        type=float,
+        default=0.0,
+        help="Target radial velocity in m/s (default: 0)",
     )
 
     # Radar parameters
     parser.add_argument(
-        "--frequency", type=float, default=10.0, help="Radar frequency in GHz (default: 10)"
+        "--frequency",
+        type=float,
+        default=10.0,
+        help="Radar frequency in GHz (default: 10)",
     )
     parser.add_argument(
         "--power", type=float, default=100.0, help="Transmit power in kW (default: 100)"
@@ -85,10 +96,16 @@ def main():
 
     # Simulation parameters
     parser.add_argument(
-        "--duration", type=float, default=10.0, help="Simulation duration in seconds (default: 10)"
+        "--duration",
+        type=float,
+        default=10.0,
+        help="Simulation duration in seconds (default: 10)",
     )
     parser.add_argument(
-        "--threshold", type=float, default=13.0, help="Detection threshold in dB (default: 13)"
+        "--threshold",
+        type=float,
+        default=13.0,
+        help="Detection threshold in dB (default: 13)",
     )
 
     # Options

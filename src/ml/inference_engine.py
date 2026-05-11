@@ -35,7 +35,6 @@ except ImportError:
     JOBLIB_AVAILABLE = False
 
 
-
 class InferenceEngine:
     """
     Real-time inference engine for target classification.
@@ -333,9 +332,9 @@ def benchmark_inference(n_iterations: int = 1000) -> float:
     avg_ms = (elapsed / n_iterations) * 1000
 
     print(f"\nInference Benchmark ({n_iterations} iterations):")
-    print(f"  Total time: {elapsed*1000:.1f} ms")
+    print(f"  Total time: {elapsed * 1000:.1f} ms")
     print(f"  Average: {avg_ms:.3f} ms per prediction")
-    print(f"  Throughput: {n_iterations/elapsed:.0f} predictions/sec")
+    print(f"  Throughput: {n_iterations / elapsed:.0f} predictions/sec")
 
     if avg_ms < 10:
         print("  ✓ Performance target met (<10ms)")
@@ -367,7 +366,7 @@ def main():
         print("\nTest Predictions:")
         for i, data in enumerate(test_cases):
             icon, name, conf = engine.predict_with_icon(data)
-            print(f"  Test {i+1}: {icon} {name} ({conf*100:.1f}%)")
+            print(f"  Test {i + 1}: {icon} {name} ({conf * 100:.1f}%)")
 
         # Benchmark
         benchmark_inference(1000)

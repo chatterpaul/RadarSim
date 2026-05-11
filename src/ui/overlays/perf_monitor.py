@@ -129,7 +129,9 @@ class PerformanceOverlay(QWidget):
             self.fps_label.setStyleSheet(f"color: {color}; background: transparent;")
 
         # Update target count
-        self.target_label.setText(f"TGT: {self.target_count} | DET: {self.detection_count}")
+        self.target_label.setText(
+            f"TGT: {self.target_count} | DET: {self.detection_count}"
+        )
 
         # Update memory
         if PSUTIL_AVAILABLE and self.mem_label:

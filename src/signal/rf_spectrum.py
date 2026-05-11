@@ -15,7 +15,6 @@ Kaynaklar:
 - Richards, "Fundamentals of Radar Signal Processing", 2nd Ed., McGraw-Hill, 2014
 """
 
-
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -69,7 +68,9 @@ class RFSpectrumAnalyzer:
         Sinyalin frekans spektrumunu FFT ile hesaplar
         """
         spectrum = np.fft.fftshift(np.fft.fft(signal, n=self.n_samples))
-        freq_axis = np.fft.fftshift(np.fft.fftfreq(self.n_samples, d=1 / self.sampling_rate))
+        freq_axis = np.fft.fftshift(
+            np.fft.fftfreq(self.n_samples, d=1 / self.sampling_rate)
+        )
         power_db = 20 * np.log10(np.abs(spectrum) + 1e-12)
         return freq_axis, power_db
 

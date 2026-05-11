@@ -74,7 +74,9 @@ class AdvancedSARISAR:
         # Zaman eksenleri
         range_time = np.linspace(0, range_samples / self.bandwidth, range_samples)
         azimuth_time = np.linspace(
-            -azimuth_samples / (2 * self.prf), azimuth_samples / (2 * self.prf), azimuth_samples
+            -azimuth_samples / (2 * self.prf),
+            azimuth_samples / (2 * self.prf),
+            azimuth_samples,
         )
 
         for i in prange(len(target_positions)):
@@ -115,7 +117,9 @@ class AdvancedSARISAR:
         range_compressed = np.zeros_like(raw_data, dtype=complex)
 
         for i in range(azimuth_samples):
-            range_compressed[:, i] = signal.correlate(raw_data[:, i], np.conj(chirp), mode="same")
+            range_compressed[:, i] = signal.correlate(
+                raw_data[:, i], np.conj(chirp), mode="same"
+            )
 
         # 2. Range Cell Migration Correction (RCMC)
         rcmc_corrected = self.apply_rcmc(range_compressed)
@@ -153,7 +157,9 @@ class AdvancedSARISAR:
         # Zaman eksenleri
         range_time = np.linspace(0, range_samples / self.bandwidth, range_samples)
         azimuth_time = np.linspace(
-            -azimuth_samples / (2 * self.prf), azimuth_samples / (2 * self.prf), azimuth_samples
+            -azimuth_samples / (2 * self.prf),
+            azimuth_samples / (2 * self.prf),
+            azimuth_samples,
         )
 
         # Backprojection
@@ -227,26 +233,34 @@ class AdvancedSARISAR:
         range_compressed = self.range_compression_rcmc(range_fft)
 
         # 5. Range IFFT
-        range_ifft = fftshift(np.fft.ifft(ifftshift(range_compressed, axes=0), axis=0), axes=0)
+        range_ifft = fftshift(
+            np.fft.ifft(ifftshift(range_compressed, axes=0), axis=0), axes=0
+        )
 
         # 6. Azimuth compression
         azimuth_compressed = self.azimuth_compression(range_ifft)
 
         # 7. Azimuth IFFT
-        image = fftshift(np.fft.ifft(ifftshift(azimuth_compressed, axes=1), axis=1), axes=1)
+        image = fftshift(
+            np.fft.ifft(ifftshift(azimuth_compressed, axes=1), axis=1), axes=1
+        )
 
         return image
 
     def generate_chirp_reference(self) -> np.ndarray:
         """Chirp reference function üretir"""
         t = np.linspace(
-            -self.pulse_width / 2, self.pulse_width / 2, int(self.pulse_width * self.bandwidth)
+            -self.pulse_width / 2,
+            self.pulse_width / 2,
+            int(self.pulse_width * self.bandwidth),
         )
         chirp_rate = self.bandwidth / self.pulse_width
         phase = np.pi * chirp_rate * t**2
         return np.exp(1j * phase)
 
-    def generate_azimuth_reference(self, range_bin: int, range_samples: int = 1024) -> np.ndarray:
+    def generate_azimuth_reference(
+        self, range_bin: int, range_samples: int = 1024
+    ) -> np.ndarray:
         """
         Generate azimuth reference function (matched filter).
 
@@ -262,7 +276,9 @@ class AdvancedSARISAR:
         """
         azimuth_samples = 512
         η = np.linspace(
-            -azimuth_samples / (2 * self.prf), azimuth_samples / (2 * self.prf), azimuth_samples
+            -azimuth_samples / (2 * self.prf),
+            azimuth_samples / (2 * self.prf),
+            azimuth_samples,
         )
 
         # Calculate range at this range bin
@@ -330,7 +346,9 @@ class AdvancedSARISAR:
 
         return rcmc_corrected
 
-    def generate_omega_k_reference(self, range_samples: int, azimuth_samples: int) -> np.ndarray:
+    def generate_omega_k_reference(
+        self, range_samples: int, azimuth_samples: int
+    ) -> np.ndarray:
         """Omega-K reference function üretir"""
         # Basitleştirilmiş reference function
         ref_function = np.ones((range_samples, azimuth_samples), dtype=complex)
@@ -368,7 +386,10 @@ class AdvancedSARISAR:
         dka = 2 * np.pi * self.prf / (self.v * azimuth_samples)
 
         kr = np.linspace(-range_samples / 2, range_samples / 2, range_samples) * dkr
-        ka = np.linspace(-azimuth_samples / 2, azimuth_samples / 2, azimuth_samples) * dka
+        ka = (
+            np.linspace(-azimuth_samples / 2, azimuth_samples / 2, azimuth_samples)
+            * dka
+        )
 
         # Reference wavenumber (at center frequency)
         k0 = 4 * np.pi * self.fc / c
@@ -655,7 +676,8 @@ class ISARProcessor:
 
         # ── Step 1: Range compression (FFT along fast-time) ──
         range_compressed = np.fft.ifft(
-            np.fft.fft(cpi_data, axis=1) * np.conj(self._chirp_spectrum(n_range))[np.newaxis, :],
+            np.fft.fft(cpi_data, axis=1)
+            * np.conj(self._chirp_spectrum(n_range))[np.newaxis, :],
             axis=1,
         )
 
@@ -705,7 +727,9 @@ class ISARProcessor:
     def _chirp_spectrum(self, n_range: int) -> np.ndarray:
         """Generate chirp reference spectrum for range compression."""
         t = np.linspace(
-            -0.5 / self.bandwidth_hz * n_range, 0.5 / self.bandwidth_hz * n_range, n_range
+            -0.5 / self.bandwidth_hz * n_range,
+            0.5 / self.bandwidth_hz * n_range,
+            n_range,
         )
         chirp_rate = self.bandwidth_hz / (1.0 / self.bandwidth_hz * n_range)
         chirp = np.exp(1j * np.pi * chirp_rate * t**2)

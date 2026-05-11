@@ -148,7 +148,9 @@ class AScope(QWidget):
         self.plot_widget.addItem(self.signal_scatter)
 
         # ═══ PHASE 28: Jamming Noise Strobe ═══
-        self.jam_noise_curve = pg.PlotCurveItem(pen=pg.mkPen(color=(255, 80, 0, 160), width=2))
+        self.jam_noise_curve = pg.PlotCurveItem(
+            pen=pg.mkPen(color=(255, 80, 0, 160), width=2)
+        )
         self.plot_widget.addItem(self.jam_noise_curve)
 
         self.jam_fill = pg.FillBetweenItem(
@@ -257,14 +259,16 @@ class AScope(QWidget):
 
         right_start = range_km + guard_width
         right_end = range_km + guard_width + ref_width
-        self.ref_region_right.setRegion([right_start, min(self.max_range_km, right_end)])
+        self.ref_region_right.setRegion(
+            [right_start, min(self.max_range_km, right_end)]
+        )
         self.ref_region_right.setVisible(True)
 
         # Update label
         self.cfar_label.setText(
             f"CFAR at {range_km:.1f} km | "
-            f"CUT: Red | Guard: {self._cfar_guard_cells*2} cells | "
-            f"Ref: {self._cfar_reference_cells*2} cells"
+            f"CUT: Red | Guard: {self._cfar_guard_cells * 2} cells | "
+            f"Ref: {self._cfar_reference_cells * 2} cells"
         )
 
     def _hide_cfar_cells(self):
@@ -372,7 +376,11 @@ class AScope(QWidget):
 
         # Elevated noise floor proportional to J/S
         elevation = min(30, max(0, jsr_db - 5))
-        jam_noise = -10 + elevation + np.random.exponential(scale=max(1, jsr_db / 5), size=n_points)
+        jam_noise = (
+            -10
+            + elevation
+            + np.random.exponential(scale=max(1, jsr_db / 5), size=n_points)
+        )
 
         self.jam_noise_curve.setData(ranges, jam_noise)
         self.jam_noise_curve.setVisible(True)

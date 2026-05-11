@@ -181,7 +181,9 @@ class RangeDopplerScope(QWidget):
         self.zero_line = pg.InfiniteLine(
             pos=0,
             angle=0,
-            pen=pg.mkPen(color=(100, 100, 100, 100), width=1, style=Qt.PenStyle.DashLine),
+            pen=pg.mkPen(
+                color=(100, 100, 100, 100), width=1, style=Qt.PenStyle.DashLine
+            ),
         )
         self.plot_widget.addItem(self.zero_line)
 
@@ -217,7 +219,8 @@ class RangeDopplerScope(QWidget):
 
         transform = QTransform()
         transform.scale(
-            self.max_range_km / self.n_range_bins, 2 * self.max_velocity_mps / self.n_doppler_bins
+            self.max_range_km / self.n_range_bins,
+            2 * self.max_velocity_mps / self.n_doppler_bins,
         )
         transform.translate(0, -self.n_doppler_bins / 2)
         self.image_item.setTransform(transform)
@@ -228,7 +231,10 @@ class RangeDopplerScope(QWidget):
     def _create_detection_overlay(self):
         """Create overlay for detected targets."""
         self.detection_scatter = pg.ScatterPlotItem(
-            size=14, symbol="+", pen=pg.mkPen(color="#ffffff", width=2), brush=pg.mkBrush(None)
+            size=14,
+            symbol="+",
+            pen=pg.mkPen(color="#ffffff", width=2),
+            brush=pg.mkBrush(None),
         )
         self.plot_widget.addItem(self.detection_scatter)
 
@@ -251,12 +257,16 @@ class RangeDopplerScope(QWidget):
                 line = pg.InfiniteLine(
                     pos=sign * v_blind,
                     angle=0,
-                    pen=pg.mkPen(color=(255, 100, 100, 120), width=1, style=Qt.PenStyle.DashLine),
+                    pen=pg.mkPen(
+                        color=(255, 100, 100, 120), width=1, style=Qt.PenStyle.DashLine
+                    ),
                 )
                 self.plot_widget.addItem(line)
                 self._blind_speed_lines.append(line)
 
-    def _update_mti_notch_indicator(self, mti_order: int, prf_hz: float, wavelength_m: float):
+    def _update_mti_notch_indicator(
+        self, mti_order: int, prf_hz: float, wavelength_m: float
+    ):
         """
         Draw MTI rejection band near zero Doppler.
 
@@ -452,7 +462,9 @@ class RangeDopplerScope(QWidget):
                     0.7,
                     dtype=np.float32,
                 )
-                noise_mask = np.random.random((self.n_doppler_bins, self.n_range_bins)) < 0.1
+                noise_mask = (
+                    np.random.random((self.n_doppler_bins, self.n_range_bins)) < 0.1
+                )
                 self.rd_map[noise_mask] = 0.9 + 0.1 * np.random.random(noise_mask.sum())
                 self.image_item.setImage((self.rd_map * 255).T.astype(np.uint8))
                 return
@@ -515,15 +527,23 @@ class RangeDopplerScope(QWidget):
 
                 ft_range_km = np.linalg.norm(ft_pos) / 1000.0
                 ft_radial_vel = (
-                    np.linalg.norm(ft_vel) * np.sign(ft_vel[0]) if len(ft_vel) > 0 else 0
+                    np.linalg.norm(ft_vel) * np.sign(ft_vel[0])
+                    if len(ft_vel) > 0
+                    else 0
                 )
 
-                if ft_range_km > self.max_range_km or abs(ft_radial_vel) > self.max_velocity_mps:
+                if (
+                    ft_range_km > self.max_range_km
+                    or abs(ft_radial_vel) > self.max_velocity_mps
+                ):
                     continue
 
                 range_idx = int((ft_range_km / self.max_range_km) * self.n_range_bins)
                 vel_idx = int(
-                    ((ft_radial_vel + self.max_velocity_mps) / (2 * self.max_velocity_mps))
+                    (
+                        (ft_radial_vel + self.max_velocity_mps)
+                        / (2 * self.max_velocity_mps)
+                    )
                     * self.n_doppler_bins
                 )
 
@@ -538,7 +558,10 @@ class RangeDopplerScope(QWidget):
                         vi = vel_idx + di
                         ri = range_idx + dj
 
-                        if 0 <= vi < self.n_doppler_bins and 0 <= ri < self.n_range_bins:
+                        if (
+                            0 <= vi < self.n_doppler_bins
+                            and 0 <= ri < self.n_range_bins
+                        ):
                             intensity = snr_db * np.exp(-0.5 * (di**2 + dj**2) / 4)
                             self.rd_map[vi, ri] = max(
                                 self.rd_map[vi, ri], self.noise_floor_db + intensity
@@ -584,7 +607,8 @@ class RangeDopplerScope(QWidget):
 
         transform = QTransform()
         transform.scale(
-            self.max_range_km / self.n_range_bins, 2 * self.max_velocity_mps / self.n_doppler_bins
+            self.max_range_km / self.n_range_bins,
+            2 * self.max_velocity_mps / self.n_doppler_bins,
         )
         transform.translate(0, -self.n_doppler_bins / 2)
         self.image_item.setTransform(transform)

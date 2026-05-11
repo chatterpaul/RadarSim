@@ -41,7 +41,9 @@ class AdvancedLPIRadar:
         self.power = power  # Radar gücü
         self.n_samples = int(bandwidth * pulse_width)
 
-    def frequency_hopping_pattern(self, n_hop: int = 64, hop_bandwidth: float = 10e6) -> np.ndarray:
+    def frequency_hopping_pattern(
+        self, n_hop: int = 64, hop_bandwidth: float = 10e6
+    ) -> np.ndarray:
         """
         Frequency Hopping Spread Spectrum (FHSS) deseni üretir
 
@@ -49,7 +51,9 @@ class AdvancedLPIRadar:
         Algoritma: Pseudo-random frequency hopping
         """
         # Hop frekansları
-        available_freqs = np.arange(-self.bandwidth / 2, self.bandwidth / 2, hop_bandwidth)
+        available_freqs = np.arange(
+            -self.bandwidth / 2, self.bandwidth / 2, hop_bandwidth
+        )
         if len(available_freqs) < n_hop:
             # Eğer yeterli frekans yoksa, mevcut olanları tekrarla
             hop_freqs = np.random.choice(available_freqs, size=n_hop, replace=True)
@@ -108,7 +112,9 @@ class AdvancedLPIRadar:
 
         return np.array(costas_arrays[array_length])
 
-    def polyphase_code_generator(self, code_length: int = 16, phases: int = 4) -> np.ndarray:
+    def polyphase_code_generator(
+        self, code_length: int = 16, phases: int = 4
+    ) -> np.ndarray:
         """
         Polyphase kod üretir (Frank, P1, P2, P3, P4 kodları)
 
@@ -129,7 +135,9 @@ class AdvancedLPIRadar:
                     code[idx] = np.exp(1j * phase)
         else:
             # Genel polyphase kodu
-            code = np.exp(1j * 2 * np.pi * np.random.randint(0, phases, code_length) / phases)
+            code = np.exp(
+                1j * 2 * np.pi * np.random.randint(0, phases, code_length) / phases
+            )
 
         return code
 
@@ -156,7 +164,9 @@ class AdvancedLPIRadar:
 
         return shaped_signal
 
-    def gauss_noise_injection(self, signal: np.ndarray, noise_power_db: float = -30) -> np.ndarray:
+    def gauss_noise_injection(
+        self, signal: np.ndarray, noise_power_db: float = -30
+    ) -> np.ndarray:
         """
         Gauss gürültü enjeksiyonu (LPI için)
 

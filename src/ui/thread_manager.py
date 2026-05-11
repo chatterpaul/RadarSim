@@ -117,7 +117,9 @@ class SimulationWorker(QObject):
         detections_for_tracker = []  # (x, y) positions for tracker
 
         for target in self.engine.targets:
-            geom = self.engine.radar.calculate_target_geometry(target.position, target.velocity)
+            geom = self.engine.radar.calculate_target_geometry(
+                target.position, target.velocity
+            )
 
             # Get detection status for this target
             is_detected = self.engine.state.detections.get(target.target_id, False)
@@ -148,10 +150,15 @@ class SimulationWorker(QObject):
 
         # ═══ TRACK-WHILE-SCAN UPDATE ═══
         tracks_data = []
-        if hasattr(self.engine, "track_manager") and self.engine.track_manager is not None:
+        if (
+            hasattr(self.engine, "track_manager")
+            and self.engine.track_manager is not None
+        ):
             try:
                 # Update tracker with detections
-                tracks = self.engine.track_manager.update(detections_for_tracker, dt=self.engine.dt)
+                tracks = self.engine.track_manager.update(
+                    detections_for_tracker, dt=self.engine.dt
+                )
 
                 # Build track data for UI
                 for track in tracks:
@@ -204,7 +211,10 @@ class SimulationWorker(QObject):
         # ═══ PHASE 26: PULSE-DOPPLER R-D MAP ═══
         rd_map_data = None
         pd_metadata = None
-        if getattr(self.engine, "pulse_doppler_enabled", False) and self.engine._rd_map is not None:
+        if (
+            getattr(self.engine, "pulse_doppler_enabled", False)
+            and self.engine._rd_map is not None
+        ):
             rdm = self.engine._rd_map
             rd_map_data = rdm.data_db.tolist()  # Serialize for signal
             pd_metadata = {
@@ -237,7 +247,9 @@ class SimulationWorker(QObject):
             "ecm_type": getattr(self.engine, "ecm_type", "noise"),
             "false_targets": false_targets_data,
             # Phase 26: Pulse-Doppler
-            "pulse_doppler_enabled": getattr(self.engine, "pulse_doppler_enabled", False),
+            "pulse_doppler_enabled": getattr(
+                self.engine, "pulse_doppler_enabled", False
+            ),
             "rd_map": rd_map_data,
             "pd_metadata": pd_metadata,
             # Phase 28: ECCM state
@@ -370,7 +382,9 @@ class SimulationThread(QThread):
         if self._worker:
             self._worker.set_speed(factor)
 
-    def set_ecm_state(self, active: bool, ecm_type: str = "noise", target_id: Optional[int] = None):
+    def set_ecm_state(
+        self, active: bool, ecm_type: str = "noise", target_id: Optional[int] = None
+    ):
         """
         Set ECM state in the simulation engine (thread-safe).
 
@@ -518,7 +532,11 @@ class SimulationThread(QThread):
     # ═══ PHASE 26: PULSE-DOPPLER PROCESSING ═══
 
     def set_pulse_doppler_mode(
-        self, enabled: bool, n_pulses: int = 64, prf_hz: float = 1000.0, mti_order: int = 0
+        self,
+        enabled: bool,
+        n_pulses: int = 64,
+        prf_hz: float = 1000.0,
+        mti_order: int = 0,
     ):
         """
         Set pulse-Doppler processing mode.
@@ -538,7 +556,9 @@ class SimulationThread(QThread):
             self.engine.set_pulse_doppler_mode(enabled, n_pulses, prf_hz, mti_order)
 
             if enabled:
-                print(f"[PD] Pulse-Doppler ACTIVATED | N={n_pulses} PRF={prf_hz}Hz MTI={mti_order}")
+                print(
+                    f"[PD] Pulse-Doppler ACTIVATED | N={n_pulses} PRF={prf_hz}Hz MTI={mti_order}"
+                )
             else:
                 print("[PD] Pulse-Doppler DEACTIVATED → Parametric mode")
         except Exception as e:
@@ -559,7 +579,10 @@ class SimulationThread(QThread):
         Reference: Bar-Shalom (2001), Ch. 5.3
         """
         try:
-            if hasattr(self.engine, "track_manager") and self.engine.track_manager is not None:
+            if (
+                hasattr(self.engine, "track_manager")
+                and self.engine.track_manager is not None
+            ):
                 self.engine.track_manager.set_ekf_mode(enabled)
                 if enabled:
                     print("[EKF] Extended Kalman Filter ACTIVATED (polar measurements)")

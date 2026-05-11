@@ -217,7 +217,9 @@ def calculate_pd_vs_range(
     snr_db = 10 * np.log10(np.maximum(snr_linear, 1e-10))
 
     # Calculate Pd for each range
-    pd_values = np.array([calculate_pd_swerling(snr, pfa, swerling_case) for snr in snr_db])
+    pd_values = np.array(
+        [calculate_pd_swerling(snr, pfa, swerling_case) for snr in snr_db]
+    )
 
     return pd_values
 
@@ -245,7 +247,9 @@ def generate_roc_curves(
     result = {"pfa": pfa_values, "pd": {}}
 
     for snr in snr_values_db:
-        pd_values = np.array([calculate_pd_swerling(snr, pfa, swerling_case) for pfa in pfa_values])
+        pd_values = np.array(
+            [calculate_pd_swerling(snr, pfa, swerling_case) for pfa in pfa_values]
+        )
         result["pd"][snr] = pd_values
 
     return result

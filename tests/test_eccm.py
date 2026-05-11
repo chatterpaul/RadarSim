@@ -212,7 +212,9 @@ class TestDRFMInjection:
         # Maximum energy should be near expected bin
         power_per_bin = np.sum(np.abs(cpi_jammed) ** 2, axis=0)
         peak_bin = np.argmax(power_per_bin)
-        assert abs(peak_bin - expected_bin) <= 2, f"Peak at bin {peak_bin}, expected {expected_bin}"
+        assert abs(peak_bin - expected_bin) <= 2, (
+            f"Peak at bin {peak_bin}, expected {expected_bin}"
+        )
 
     def test_idle_no_injection(self):
         """No injection when jammer is IDLE."""
@@ -259,9 +261,9 @@ class TestFrequencyAgility:
         fa = FrequencyAgility(center_freq_hz=10e9, n_hops=n_hops)
         fa.enable()
         actual = fa.js_reduction_db
-        assert (
-            abs(actual - expected_reduction_db) < 0.1
-        ), f"Expected {expected_reduction_db:.1f} dB, got {actual:.1f} dB"
+        assert abs(actual - expected_reduction_db) < 0.1, (
+            f"Expected {expected_reduction_db:.1f} dB, got {actual:.1f} dB"
+        )
 
     def test_disabled_no_reduction(self):
         """Disabled frequency agility gives 0 dB reduction."""
@@ -394,7 +396,9 @@ class TestEKFCoastMode:
         state = ekf.predict(state, dt=1.0)
 
         # Update with heavy jamming (J/S = 30 dB)
-        state_coasted = ekf.update_with_jsr(state, z_polar=(11000.0, 0.5), snr_db=20.0, jsr_db=30.0)
+        state_coasted = ekf.update_with_jsr(
+            state, z_polar=(11000.0, 0.5), snr_db=20.0, jsr_db=30.0
+        )
 
         assert ekf.is_coasting, "Should be coasting with J/S=30 dB, SNR=20 dB"
         assert ekf.coast_count == 1
@@ -419,7 +423,9 @@ class TestEKFCoastMode:
         state = ekf.predict(state, dt=1.0)
 
         x_before = state.x.copy()
-        state_coasted = ekf.update_with_jsr(state, z_polar=(99999.0, 0.0), snr_db=10.0, jsr_db=30.0)
+        state_coasted = ekf.update_with_jsr(
+            state, z_polar=(99999.0, 0.0), snr_db=10.0, jsr_db=30.0
+        )
 
         np.testing.assert_array_equal(state_coasted.x, x_before)
 
@@ -430,7 +436,9 @@ class TestEKFCoastMode:
 
         for scan in range(10):
             state = ekf.predict(state, dt=1.0)
-            state = ekf.update_with_jsr(state, z_polar=(10000.0, 0.5), snr_db=15.0, jsr_db=30.0)
+            state = ekf.update_with_jsr(
+                state, z_polar=(10000.0, 0.5), snr_db=15.0, jsr_db=30.0
+            )
 
         assert ekf.coast_count == 10
         assert ekf.is_coasting
@@ -447,7 +455,9 @@ class TestEKFCoastMode:
 
         for _ in range(6):
             state = ekf.predict(state, dt=1.0)
-            state = ekf.update_with_jsr(state, z_polar=(10000.0, 0.5), snr_db=10.0, jsr_db=30.0)
+            state = ekf.update_with_jsr(
+                state, z_polar=(10000.0, 0.5), snr_db=10.0, jsr_db=30.0
+            )
 
         assert ekf.should_drop_track
 
@@ -459,13 +469,17 @@ class TestEKFCoastMode:
         # 3 scans of jamming
         for _ in range(3):
             state = ekf.predict(state, dt=1.0)
-            state = ekf.update_with_jsr(state, z_polar=(10000.0, 0.0), snr_db=15.0, jsr_db=30.0)
+            state = ekf.update_with_jsr(
+                state, z_polar=(10000.0, 0.0), snr_db=15.0, jsr_db=30.0
+            )
 
         assert ekf.coast_count == 3
 
         # Jamming clears
         state = ekf.predict(state, dt=1.0)
-        state = ekf.update_with_jsr(state, z_polar=(10000.0, 0.0), snr_db=20.0, jsr_db=-10.0)
+        state = ekf.update_with_jsr(
+            state, z_polar=(10000.0, 0.0), snr_db=20.0, jsr_db=-10.0
+        )
 
         assert ekf.coast_count == 0
         assert not ekf.is_coasting
@@ -585,5 +599,7 @@ class TestBurnThrough:
         )
         r_bt_km = r_bt / 1000.0
         # Burn-through range should be positive and finite
-        assert r_bt_km > 0, f"Burn-through range should be positive, got {r_bt_km:.3f} km"
+        assert r_bt_km > 0, (
+            f"Burn-through range should be positive, got {r_bt_km:.3f} km"
+        )
         assert np.isfinite(r_bt_km), "Burn-through range should be finite"

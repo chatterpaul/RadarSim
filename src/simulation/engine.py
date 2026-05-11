@@ -297,9 +297,7 @@ class SimulationEngine:
         # ═══ PHASE 19: CLUTTER, MTI & ECCM STATE ═══
         # Clutter: Adds environmental noise (ground/sea clutter)
         self.clutter_enabled = False
-        self.terrain_type = (
-            "rural"  # 'urban', 'suburban', 'rural', 'forest', 'desert', 'mountains', 'sea'
-        )
+        self.terrain_type = "rural"  # 'urban', 'suburban', 'rural', 'forest', 'desert', 'mountains', 'sea'
         self.sea_state = 3  # Douglas sea state (0-6)
         self.rain_rate_mm_hr = 0.0  # For volume clutter (rain/snow)
 
@@ -405,7 +403,9 @@ class SimulationEngine:
         amplitudes = []
 
         for target in self.targets:
-            geom = self.radar.calculate_target_geometry(target.position, target.velocity)
+            geom = self.radar.calculate_target_geometry(
+                target.position, target.velocity
+            )
             r_m = geom["range_m"]
             if r_m < 100.0 or r_m > self._pd_processor.max_unambiguous_range_m:
                 continue
@@ -432,7 +432,9 @@ class SimulationEngine:
         # Always generate R-D map (with at least noise)
         self._rd_map = self._pd_processor.process_cpi(
             target_ranges_m=np.array(ranges_m) if ranges_m else np.array([]),
-            target_velocities_mps=np.array(velocities_mps) if velocities_mps else np.array([]),
+            target_velocities_mps=np.array(velocities_mps)
+            if velocities_mps
+            else np.array([]),
             target_amplitudes=np.array(amplitudes) if amplitudes else np.array([]),
             noise_power=1e-12,
         )
@@ -451,7 +453,10 @@ class SimulationEngine:
 
         self.ecm_active = active
         self.ecm_type = (
-            ecm_type.lower().replace(" ", "_").replace("_barrage", "").replace("_spot", "")
+            ecm_type.lower()
+            .replace(" ", "_")
+            .replace("_barrage", "")
+            .replace("_spot", "")
         )
 
         # Clear false targets when ECM is deactivated
@@ -545,7 +550,9 @@ class SimulationEngine:
                 total_delay = base_delay + rgpo_drift
 
                 # Ghost position: Same direction but increasing range (RGPO)
-                direction = parent_target.position / (np.linalg.norm(parent_target.position) + 1e-6)
+                direction = parent_target.position / (
+                    np.linalg.norm(parent_target.position) + 1e-6
+                )
                 ghost_pos = parent_target.position + direction * total_delay
 
                 # Ghost velocity: Slightly slower than parent (appears to fall back)
@@ -572,7 +579,9 @@ class SimulationEngine:
             # Key: Maintains high speed but separates by ~5 degrees
 
             # Calculate divergence direction (perpendicular + slight outward)
-            parent_dir = parent_target.velocity / (np.linalg.norm(parent_target.velocity) + 1e-6)
+            parent_dir = parent_target.velocity / (
+                np.linalg.norm(parent_target.velocity) + 1e-6
+            )
 
             # Create perpendicular divergence vector
             perp = np.array([-parent_dir[1], parent_dir[0], 0])
@@ -582,7 +591,8 @@ class SimulationEngine:
 
             # Diverge by ~5 degrees (sin(5°) ≈ 0.087)
             diverge_vel = (
-                parent_target.velocity + perp * np.linalg.norm(parent_target.velocity) * 0.09
+                parent_target.velocity
+                + perp * np.linalg.norm(parent_target.velocity) * 0.09
             )
 
             # Position slightly behind and to side
@@ -674,7 +684,9 @@ class SimulationEngine:
         # 2. Process each target
         for target in self.targets:
             # Calculate geometry
-            geom = self.radar.calculate_target_geometry(target.position, target.velocity)
+            geom = self.radar.calculate_target_geometry(
+                target.position, target.velocity
+            )
 
             # Get target RCS with fluctuation
             rcs = target.get_rcs(self.radar.position)
@@ -685,7 +697,9 @@ class SimulationEngine:
                 freq_ghz = self.radar.frequency_hz / 1e9
                 range_km = geom["range_m"] / 1000
                 if range_km > 0.1:
-                    atm_loss_db = ITU_R_P676.total_attenuation(range_km, freq_ghz, two_way=True)
+                    atm_loss_db = ITU_R_P676.total_attenuation(
+                        range_km, freq_ghz, two_way=True
+                    )
 
             # ═══ TERRAIN MASKING CHECK (LOS) ═══
             terrain_masked = False
@@ -714,7 +728,10 @@ class SimulationEngine:
                 snr_db = -100.0  # Effectively invisible
             else:
                 snr_db = calculate_snr(
-                    self._radar_params, rcs, geom["range_m"], atmospheric_loss_db=atm_loss_db
+                    self._radar_params,
+                    rcs,
+                    geom["range_m"],
+                    atmospheric_loss_db=atm_loss_db,
                 )
 
             # ═══ PHASE 19: CLUTTER DEGRADATION ═══
@@ -725,7 +742,9 @@ class SimulationEngine:
                 try:
                     # Calculate grazing angle (simplified)
                     grazing_angle = (
-                        abs(geom["elevation_rad"]) if abs(geom["elevation_rad"]) > 0.01 else 0.05
+                        abs(geom["elevation_rad"])
+                        if abs(geom["elevation_rad"]) > 0.01
+                        else 0.05
                     )
 
                     # Get clutter backscatter coefficient
@@ -733,13 +752,20 @@ class SimulationEngine:
 
                     # ═══ PHASE 25: SEA CLUTTER AUTOMATION ═══
                     # Use GIT model for sea, Nathanson model for land
-                    if "sea" in self.terrain_type.lower() or "water" in self.terrain_type.lower():
+                    if (
+                        "sea" in self.terrain_type.lower()
+                        or "water" in self.terrain_type.lower()
+                    ):
                         sigma0_db = ClutterModel.sea_clutter_sigma0(
-                            grazing_angle, sea_state=self.sea_state, frequency_ghz=freq_ghz
+                            grazing_angle,
+                            sea_state=self.sea_state,
+                            frequency_ghz=freq_ghz,
                         )
                     else:
                         sigma0_db = ClutterModel.ground_clutter_sigma0(
-                            grazing_angle, terrain_type=self.terrain_type, frequency_ghz=freq_ghz
+                            grazing_angle,
+                            terrain_type=self.terrain_type,
+                            frequency_ghz=freq_ghz,
                         )
 
                     # Resolution cell area (approximate)
@@ -754,7 +780,9 @@ class SimulationEngine:
                     # Signal-to-Clutter Ratio (SCR) loss
                     # SNR_eff = SNR * (1 / (1 + C/N))
                     if clutter_rcs > 0.01:
-                        clutter_snr_loss_db = 10 * np.log10(1 + clutter_rcs / (rcs + 0.01))
+                        clutter_snr_loss_db = 10 * np.log10(
+                            1 + clutter_rcs / (rcs + 0.01)
+                        )
                         snr_db -= clutter_snr_loss_db
                 except Exception:
                     pass  # Fail silently if clutter calculation fails
@@ -814,7 +842,9 @@ class SimulationEngine:
 
                     # Apply clutter-to-signal ratio loss
                     if rain_clutter_rcs > 0.01:
-                        rain_clutter_loss_db = 10 * np.log10(1 + rain_clutter_rcs / (rcs + 0.01))
+                        rain_clutter_loss_db = 10 * np.log10(
+                            1 + rain_clutter_rcs / (rcs + 0.01)
+                        )
                         snr_db -= rain_clutter_loss_db
                 except Exception:
                     pass  # Fail silently if rain clutter calculation fails
@@ -838,9 +868,15 @@ class SimulationEngine:
 
             # Generate measurements (with noise if detected)
             if is_detected:
-                measured_range = geom["range_m"] + np.random.normal(0, self.range_noise_std)
-                measured_az = geom["azimuth_rad"] + np.random.normal(0, self.angle_noise_std)
-                measured_el = geom["elevation_rad"] + np.random.normal(0, self.angle_noise_std)
+                measured_range = geom["range_m"] + np.random.normal(
+                    0, self.range_noise_std
+                )
+                measured_az = geom["azimuth_rad"] + np.random.normal(
+                    0, self.angle_noise_std
+                )
+                measured_el = geom["elevation_rad"] + np.random.normal(
+                    0, self.angle_noise_std
+                )
             else:
                 measured_range = 0.0
                 measured_az = 0.0
@@ -861,7 +897,12 @@ class SimulationEngine:
                 if self._frame_count % 10 == 0:
                     try:
                         # Calculate Doppler frequency from radial velocity
-                        doppler_hz = 2 * geom["radial_velocity_mps"] * self.radar.frequency_hz / 3e8
+                        doppler_hz = (
+                            2
+                            * geom["radial_velocity_mps"]
+                            * self.radar.frequency_hz
+                            / 3e8
+                        )
 
                         # Build feature vector for inference
                         track_data = {
@@ -871,7 +912,9 @@ class SimulationEngine:
                             "rcs_est_m2": rcs,
                         }
 
-                        predicted_class, ai_confidence = self._inference_engine.predict(track_data)
+                        predicted_class, ai_confidence = self._inference_engine.predict(
+                            track_data
+                        )
                     except Exception:
                         pass  # Fail silently if inference fails
 
@@ -907,7 +950,9 @@ class SimulationEngine:
                 # Check if enough time has passed since last generation
                 time_since_activation = self.current_time - self.ecm_activation_time
                 # Generate only at 1 Hz rate (once per second)
-                should_generate = int(time_since_activation) != int(time_since_activation - dt)
+                should_generate = int(time_since_activation) != int(
+                    time_since_activation - dt
+                )
                 if should_generate or len(self.false_targets) == 0:
                     new_false_targets = self.generate_ecm_false_targets(target)
                     self.false_targets.extend(new_false_targets)
@@ -1067,7 +1112,9 @@ def validate_linear_motion(
     }
 
 
-def validate_detection_logic(close_range_km: float = 10.0, far_range_km: float = 500.0) -> dict:
+def validate_detection_logic(
+    close_range_km: float = 10.0, far_range_km: float = 500.0
+) -> dict:
     """
     Validate detection logic at different ranges.
 
@@ -1108,7 +1155,10 @@ def validate_detection_logic(close_range_km: float = 10.0, far_range_km: float =
 
     # Run simulation
     engine = SimulationEngine(
-        radar=radar, targets=[close_target, far_target], dt=0.1, detection_threshold_db=13.0
+        radar=radar,
+        targets=[close_target, far_target],
+        dt=0.1,
+        detection_threshold_db=13.0,
     )
 
     # Single step

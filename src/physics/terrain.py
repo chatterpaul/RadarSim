@@ -350,7 +350,11 @@ class TerrainMap:
             return False, block_range, (block_x, block_y)
 
     def get_terrain_profile(
-        self, radar_pos: np.ndarray, azimuth_rad: float, max_range_m: float, num_points: int = 100
+        self,
+        radar_pos: np.ndarray,
+        azimuth_rad: float,
+        max_range_m: float,
+        num_points: int = 100,
     ) -> Tuple[np.ndarray, np.ndarray]:
         """
         Get terrain elevation profile along a radial from radar.
@@ -382,7 +386,9 @@ class TerrainMap:
 
         return ranges, elevations
 
-    def get_horizon_range(self, radar_altitude_m: float, target_altitude_m: float = 0.0) -> float:
+    def get_horizon_range(
+        self, radar_altitude_m: float, target_altitude_m: float = 0.0
+    ) -> float:
         """
         Calculate radar horizon range using 4/3 Earth model.
 
@@ -490,7 +496,9 @@ def validate_los_physics() -> dict:
 
     # Test 2: Low target behind mountain (500m altitude)
     low_target = np.array([60000.0, 70000.0, 500.0])
-    visible_low, block_range, block_pos = terrain.check_line_of_sight(radar_pos, low_target)
+    visible_low, block_range, block_pos = terrain.check_line_of_sight(
+        radar_pos, low_target
+    )
 
     # Test 3: Horizon calculation
     horizon_range = terrain.get_horizon_range(100.0, 100.0)

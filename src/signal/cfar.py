@@ -228,7 +228,9 @@ class CFARDetector:
         self.pfa = pfa
         self.cfar_type = cfar_type
 
-    def detect(self, signal: np.ndarray, db_input: bool = False) -> Tuple[np.ndarray, np.ndarray]:
+    def detect(
+        self, signal: np.ndarray, db_input: bool = False
+    ) -> Tuple[np.ndarray, np.ndarray]:
         """
         Apply CFAR detection to signal.
 
@@ -269,7 +271,9 @@ class CFARDetector:
 
         return detections, thresholds
 
-    def detect_2d(self, rd_map: np.ndarray, db_input: bool = True) -> Tuple[np.ndarray, np.ndarray]:
+    def detect_2d(
+        self, rd_map: np.ndarray, db_input: bool = True
+    ) -> Tuple[np.ndarray, np.ndarray]:
         """
         Apply 2D CFAR detection to Range-Doppler map.
 

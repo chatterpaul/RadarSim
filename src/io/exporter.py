@@ -46,7 +46,11 @@ def export_scenario_to_yaml(
         # Write to file
         with open(filepath, "w", encoding="utf-8") as f:
             yaml.dump(
-                scenario_data, f, default_flow_style=False, sort_keys=False, allow_unicode=True
+                scenario_data,
+                f,
+                default_flow_style=False,
+                sort_keys=False,
+                allow_unicode=True,
             )
 
         print(f"[EXPORT] Scenario saved to: {filepath}")
@@ -142,7 +146,10 @@ def _extract_simulation_params(engine) -> Dict[str, Any]:
 
     # Advanced features
     if getattr(engine, "mti_enabled", False):
-        params["mti"] = {"enabled": True, "threshold_mps": float(engine.mti_threshold_mps)}
+        params["mti"] = {
+            "enabled": True,
+            "threshold_mps": float(engine.mti_threshold_mps),
+        }
 
     if getattr(engine, "frequency_agility_enabled", False):
         params["eccm"] = {"frequency_agility": True}

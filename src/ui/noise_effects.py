@@ -43,7 +43,9 @@ class NoiseOverlay:
         overlay.update_noise(snr_db=15.0, radar_type="mechanical")
     """
 
-    def __init__(self, width: int = 400, height: int = 400, base_intensity: float = 0.15) -> None:
+    def __init__(
+        self, width: int = 400, height: int = 400, base_intensity: float = 0.15
+    ) -> None:
         """
         Initialize noise overlay.
 
@@ -175,7 +177,9 @@ class NoiseOverlay:
         self._generate_noise(intensity, speckle, scan_lines)
         self._update_image()
 
-    def set_bounds(self, x_min: float, x_max: float, y_min: float, y_max: float) -> None:
+    def set_bounds(
+        self, x_min: float, x_max: float, y_min: float, y_max: float
+    ) -> None:
         """
         Set the display bounds for the overlay.
 
@@ -215,7 +219,9 @@ class RadialNoiseOverlay(NoiseOverlay):
         center = diameter // 2
         y, x = np.ogrid[:diameter, :diameter]
         self.radial_mask = np.sqrt((x - center) ** 2 + (y - center) ** 2) / center
-        self.radial_mask = 1 - np.clip(self.radial_mask, 0, 1)  # Inverse: bright at center
+        self.radial_mask = 1 - np.clip(
+            self.radial_mask, 0, 1
+        )  # Inverse: bright at center
 
     def _generate_noise(
         self, intensity: float = 0.15, speckle: float = 0.25, scan_lines: bool = False

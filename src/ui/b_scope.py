@@ -160,7 +160,9 @@ class BScope(QWidget):
         self.plot_widget.addItem(self.target_scatter)
 
         # Create scatter for historical blips (fading)
-        self.history_scatter = pg.ScatterPlotItem(size=8, symbol="s", pen=pg.mkPen(None))
+        self.history_scatter = pg.ScatterPlotItem(
+            size=8, symbol="s", pen=pg.mkPen(None)
+        )
         self.plot_widget.addItem(self.history_scatter)
 
         # Raster bar (horizontal line sweeping top to bottom)
@@ -175,13 +177,18 @@ class BScope(QWidget):
         self.boresight_line = pg.InfiniteLine(
             pos=0,
             angle=90,  # Vertical
-            pen=pg.mkPen(color=(100, 100, 100, 100), width=1, style=Qt.PenStyle.DashLine),
+            pen=pg.mkPen(
+                color=(100, 100, 100, 100), width=1, style=Qt.PenStyle.DashLine
+            ),
         )
         self.plot_widget.addItem(self.boresight_line)
 
         # Selected target marker
         self.selected_marker = pg.ScatterPlotItem(
-            size=20, symbol="o", pen=pg.mkPen(color=(255, 200, 0), width=3), brush=pg.mkBrush(None)
+            size=20,
+            symbol="o",
+            pen=pg.mkPen(color=(255, 200, 0), width=3),
+            brush=pg.mkBrush(None),
         )
         self.plot_widget.addItem(self.selected_marker)
 
@@ -283,7 +290,11 @@ class BScope(QWidget):
             name_lower = target.get("name", "").lower()
             snr = target["snr_db"]
 
-            if "bandit" in name_lower or "hostile" in name_lower or "enemy" in name_lower:
+            if (
+                "bandit" in name_lower
+                or "hostile" in name_lower
+                or "enemy" in name_lower
+            ):
                 # HOSTILE - Red
                 base_color = (255, 68, 68)
             elif "friendly" in name_lower or "allied" in name_lower:
@@ -298,7 +309,9 @@ class BScope(QWidget):
 
             # Intensity modulation based on SNR
             alpha = min(230, max(100, int(180 * min(1.0, snr / 20.0))))
-            brushes.append(pg.mkBrush(base_color[0], base_color[1], base_color[2], alpha))
+            brushes.append(
+                pg.mkBrush(base_color[0], base_color[1], base_color[2], alpha)
+            )
 
         self.blips = current_blips
 

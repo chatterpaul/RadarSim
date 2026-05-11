@@ -20,7 +20,6 @@ References:
     - Developed by Mehmet Gümüş (github.com/SpaceEngineerSS)
 """
 
-
 import numpy as np
 
 

@@ -550,7 +550,10 @@ class ExtendedKalmanFilter:
 
         inv_det = 1.0 / det
         return np.array(
-            [[M[1, 1] * inv_det, -M[0, 1] * inv_det], [-M[1, 0] * inv_det, M[0, 0] * inv_det]],
+            [
+                [M[1, 1] * inv_det, -M[0, 1] * inv_det],
+                [-M[1, 0] * inv_det, M[0, 0] * inv_det],
+            ],
             dtype=np.float64,
         )
 

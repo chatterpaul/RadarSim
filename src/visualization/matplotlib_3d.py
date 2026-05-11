@@ -73,7 +73,11 @@ class Visualization3D:
                 depthshade=True,
             )
             self.ax.text(
-                obj.position[0], obj.position[1], obj.position[2], obj.label, color=obj.color
+                obj.position[0],
+                obj.position[1],
+                obj.position[2],
+                obj.label,
+                color=obj.color,
             )
         self.ax.view_init(elev=camera_elev, azim=camera_azim)
         self.ax.legend()

@@ -61,7 +61,9 @@ class ITU_R_P676:
         elif f < 57:
             # Approaching 60 GHz complex
             gamma_o = (
-                (7.2 * (rp**2) * (rt**2.8) / (f**2 + 0.34 * (rp**2) * (rt**1.6))) * (f**2) * 1e-3
+                (7.2 * (rp**2) * (rt**2.8) / (f**2 + 0.34 * (rp**2) * (rt**1.6)))
+                * (f**2)
+                * 1e-3
             )
         elif f < 63:
             # 60 GHz oxygen resonance peak (peak ~15 dB/km)
@@ -150,7 +152,9 @@ class ITU_R_P676:
         Reference: ITU-R P.676-12, Annex 1, Section 1
         """
         temperature_k = temperature_c + 273.15
-        return cls._specific_attenuation_oxygen_jit(frequency_ghz, temperature_k, pressure_hpa)
+        return cls._specific_attenuation_oxygen_jit(
+            frequency_ghz, temperature_k, pressure_hpa
+        )
 
     @classmethod
     def specific_attenuation_water_vapor(
@@ -205,7 +209,9 @@ class ITU_R_P676:
 
         Reference: ITU-R P.676-12, Annex 2
         """
-        gamma_o = cls.specific_attenuation_oxygen(frequency_ghz, temperature_c, pressure_hpa)
+        gamma_o = cls.specific_attenuation_oxygen(
+            frequency_ghz, temperature_c, pressure_hpa
+        )
         gamma_w = cls.specific_attenuation_water_vapor(
             frequency_ghz, temperature_c, water_vapor_density
         )
@@ -234,7 +240,9 @@ class ITU_R_P676:
         Returns:
             Tuple of (oxygen_attenuation_dB, water_vapor_attenuation_dB, total_dB)
         """
-        gamma_o = cls.specific_attenuation_oxygen(frequency_ghz, temperature_c, pressure_hpa)
+        gamma_o = cls.specific_attenuation_oxygen(
+            frequency_ghz, temperature_c, pressure_hpa
+        )
         gamma_w = cls.specific_attenuation_water_vapor(
             frequency_ghz, temperature_c, water_vapor_density
         )
@@ -269,7 +277,9 @@ def validate_itu_60ghz() -> dict:
     temperature_c = 15.0
     pressure_hpa = STANDARD_PRESSURE
 
-    gamma_o = ITU_R_P676.specific_attenuation_oxygen(frequency_ghz, temperature_c, pressure_hpa)
+    gamma_o = ITU_R_P676.specific_attenuation_oxygen(
+        frequency_ghz, temperature_c, pressure_hpa
+    )
 
     expected_gamma = 15.0  # dB/km
     tolerance = 2.0  # dB/km (generous tolerance for simplified model)
@@ -314,8 +324,12 @@ def validate_itu_xband() -> dict:
     pressure_hpa = STANDARD_PRESSURE
     water_vapor = STANDARD_WATER_VAPOR_DENSITY
 
-    gamma_o = ITU_R_P676.specific_attenuation_oxygen(frequency_ghz, temperature_c, pressure_hpa)
-    gamma_w = ITU_R_P676.specific_attenuation_water_vapor(frequency_ghz, temperature_c, water_vapor)
+    gamma_o = ITU_R_P676.specific_attenuation_oxygen(
+        frequency_ghz, temperature_c, pressure_hpa
+    )
+    gamma_w = ITU_R_P676.specific_attenuation_water_vapor(
+        frequency_ghz, temperature_c, water_vapor
+    )
     gamma_total = gamma_o + gamma_w
 
     max_expected_gamma = 0.02  # dB/km (should be very low at X-band)

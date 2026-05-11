@@ -144,7 +144,9 @@ class ReplayLoader:
         self.filepath = filepath
         self._file: Optional[h5py.File] = None
         self._timestamps: Optional[np.ndarray] = None
-        self._target_data: Dict[int, Dict] = {}  # id -> {positions, velocities, metadata}
+        self._target_data: Dict[
+            int, Dict
+        ] = {}  # id -> {positions, velocities, metadata}
         self._measurements: Optional[Dict[str, np.ndarray]] = None
         self.metadata: Optional[ReplayMetadata] = None
 
@@ -214,12 +216,18 @@ class ReplayLoader:
         meas_group = self._file.get("measurements", None)
         if meas_group:
             self._measurements = {
-                "time": np.array(meas_group["time"]) if "time" in meas_group else np.array([]),
+                "time": np.array(meas_group["time"])
+                if "time" in meas_group
+                else np.array([]),
                 "target_id": (
-                    np.array(meas_group["target_id"]) if "target_id" in meas_group else np.array([])
+                    np.array(meas_group["target_id"])
+                    if "target_id" in meas_group
+                    else np.array([])
                 ),
                 "range_m": (
-                    np.array(meas_group["range_m"]) if "range_m" in meas_group else np.array([])
+                    np.array(meas_group["range_m"])
+                    if "range_m" in meas_group
+                    else np.array([])
                 ),
                 "azimuth_rad": (
                     np.array(meas_group["azimuth_rad"])
@@ -227,10 +235,14 @@ class ReplayLoader:
                     else np.array([])
                 ),
                 "snr_db": (
-                    np.array(meas_group["snr_db"]) if "snr_db" in meas_group else np.array([])
+                    np.array(meas_group["snr_db"])
+                    if "snr_db" in meas_group
+                    else np.array([])
                 ),
                 "detected": (
-                    np.array(meas_group["detected"]) if "detected" in meas_group else np.array([])
+                    np.array(meas_group["detected"])
+                    if "detected" in meas_group
+                    else np.array([])
                 ),
             }
 
@@ -241,7 +253,9 @@ class ReplayLoader:
             power_watts=float(power_watts),
             max_range_km=float(max_range_km),
             target_ids=list(self._target_data.keys()),
-            num_measurements=len(self._measurements["time"]) if self._measurements else 0,
+            num_measurements=len(self._measurements["time"])
+            if self._measurements
+            else 0,
             version=self._file.attrs.get("version", "1.0") if self._file else "1.0",
             created=self._file.attrs.get("created", "") if self._file else "",
         )

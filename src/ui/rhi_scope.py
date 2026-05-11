@@ -181,7 +181,10 @@ class RHIScope(QWidget):
 
         # Masked target scatter (behind terrain)
         self.masked_scatter = pg.ScatterPlotItem(
-            size=10, pen=pg.mkPen("#ff555580", width=1), brush=pg.mkBrush("#ff555540"), symbol="x"
+            size=10,
+            pen=pg.mkPen("#ff555580", width=1),
+            brush=pg.mkBrush("#ff555540"),
+            symbol="x",
         )
         self.plot_widget.addItem(self.masked_scatter)
 
@@ -196,7 +199,9 @@ class RHIScope(QWidget):
         self.plot_widget.addItem(self.radar_marker)
 
         # Selected target highlight
-        self.selected_marker = pg.TargetItem(pos=(0, 0), size=20, pen=pg.mkPen("#ffcc00", width=2))
+        self.selected_marker = pg.TargetItem(
+            pos=(0, 0), size=20, pen=pg.mkPen("#ffcc00", width=2)
+        )
         self.selected_marker.setVisible(False)
         self.plot_widget.addItem(self.selected_marker)
 
@@ -238,7 +243,9 @@ class RHIScope(QWidget):
         self.current_azimuth_deg = azimuth_deg
         self.azimuth_label.setText(f"AZ: {azimuth_deg:03.0f}°")
 
-    def set_terrain_profile(self, ranges_km: np.ndarray, elevations_m: np.ndarray) -> None:
+    def set_terrain_profile(
+        self, ranges_km: np.ndarray, elevations_m: np.ndarray
+    ) -> None:
         """
         Set terrain profile for current azimuth.
 
@@ -323,7 +330,9 @@ class RHIScope(QWidget):
         # Update terrain profile if provided
         terrain_data = state.get("terrain_profile", None)
         if terrain_data:
-            self.set_terrain_profile(terrain_data["ranges_km"], terrain_data["elevations_m"])
+            self.set_terrain_profile(
+                terrain_data["ranges_km"], terrain_data["elevations_m"]
+            )
 
     def set_max_range(self, range_km: float) -> None:
         """Set maximum display range."""

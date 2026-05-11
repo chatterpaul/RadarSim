@@ -118,7 +118,9 @@ class TargetKinematics:
         if len(self.velocity) == 2:
             self.velocity = np.array([self.velocity[0], self.velocity[1], 0.0])
         if len(self.acceleration) == 2:
-            self.acceleration = np.array([self.acceleration[0], self.acceleration[1], 0.0])
+            self.acceleration = np.array(
+                [self.acceleration[0], self.acceleration[1], 0.0]
+            )
 
     def update_attitude_from_velocity(self) -> None:
         """
@@ -140,9 +142,9 @@ class TargetKinematics:
 
         # Roll from lateral acceleration (coordinated turn)
         if vel_horizontal > 10.0:  # Only if moving significantly
-            lateral_accel = self.acceleration[0] * np.sin(self.yaw) - self.acceleration[1] * np.cos(
-                self.yaw
-            )
+            lateral_accel = self.acceleration[0] * np.sin(self.yaw) - self.acceleration[
+                1
+            ] * np.cos(self.yaw)
             # φ = arctan(a_lateral / g)
             self.roll = np.arctan2(lateral_accel, 9.81)
             self.roll = np.clip(self.roll, -np.pi / 3, np.pi / 3)  # Limit to ±60°
@@ -160,7 +162,10 @@ class SwerlingRCS:
 
     @staticmethod
     def generate_rcs(
-        mean_rcs: float, model: SwerlingModel, n_pulses: int = 1, correlation: float = 1.0
+        mean_rcs: float,
+        model: SwerlingModel,
+        n_pulses: int = 1,
+        correlation: float = 1.0,
     ) -> float:
         """
         Generate fluctuating RCS based on Swerling model.
@@ -212,7 +217,9 @@ class SwerlingRCS:
         return mean_rcs
 
     @staticmethod
-    def get_pdf(rcs_values: np.ndarray, mean_rcs: float, model: SwerlingModel) -> np.ndarray:
+    def get_pdf(
+        rcs_values: np.ndarray, mean_rcs: float, model: SwerlingModel
+    ) -> np.ndarray:
         """
         Get probability density function for RCS values.
 
@@ -246,7 +253,9 @@ class SwerlingRCS:
         return pdf
 
     @staticmethod
-    def get_fluctuation_loss(model: SwerlingModel, pd: float = 0.9, pfa: float = 1e-6) -> float:
+    def get_fluctuation_loss(
+        model: SwerlingModel, pd: float = 0.9, pfa: float = 1e-6
+    ) -> float:
         """
         Get fluctuation loss compared to Swerling 0 (non-fluctuating).
 
@@ -437,7 +446,9 @@ def validate_swerling_distribution(
     from scipy import stats
 
     # Generate samples
-    samples = np.array([SwerlingRCS.generate_rcs(mean_rcs, model) for _ in range(n_samples)])
+    samples = np.array(
+        [SwerlingRCS.generate_rcs(mean_rcs, model) for _ in range(n_samples)]
+    )
 
     if model == SwerlingModel.SWERLING_0:
         # Non-fluctuating: all samples should equal mean_rcs
@@ -464,7 +475,9 @@ def validate_swerling_distribution(
         # Exponential distribution: p(σ) = (1/σ_avg) * exp(-σ/σ_avg)
         # Equivalent to scipy.stats.expon with scale=mean_rcs
 
-        ks_stat, p_value = stats.kstest(samples, lambda x: stats.expon.cdf(x, scale=mean_rcs))
+        ks_stat, p_value = stats.kstest(
+            samples, lambda x: stats.expon.cdf(x, scale=mean_rcs)
+        )
 
         is_valid = p_value > significance_level
 
@@ -512,7 +525,8 @@ def validate_swerling_distribution(
                 "sample_mean": np.mean(samples),
                 "sample_std": np.std(samples),
                 "theoretical_mean": mean_rcs,
-                "theoretical_std": mean_rcs / np.sqrt(2),  # For Gamma(2), std = mean/sqrt(2)
+                "theoretical_std": mean_rcs
+                / np.sqrt(2),  # For Gamma(2), std = mean/sqrt(2)
             },
             "ks_test": {
                 "statistic": ks_stat,
@@ -527,4 +541,7 @@ def validate_swerling_distribution(
         }
 
     else:
-        return {"error": f"Unknown Swerling model: {model}", "validation": {"is_valid": False}}
+        return {
+            "error": f"Unknown Swerling model: {model}",
+            "validation": {"is_valid": False},
+        }

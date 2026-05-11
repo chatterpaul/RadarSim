@@ -100,9 +100,9 @@ class TestSkolnikExample21:
 
         # k * T * B * F = 1.38e-23 * 290 * 1e6 * 2 ≈ 8e-15 W
         expected_order = 1e-14
-        assert (
-            1e-15 < noise_power < 1e-13
-        ), f"Noise power ({noise_power:.2e} W) outside expected range"
+        assert 1e-15 < noise_power < 1e-13, (
+            f"Noise power ({noise_power:.2e} W) outside expected range"
+        )
 
 
 # =============================================================================
@@ -321,7 +321,9 @@ class TestDopplerShift:
     @pytest.fixture
     def radar_10ghz(self):
         """X-band (10 GHz) radar fixture"""
-        return RadarParameters(frequency=10e9, power_transmitted=1000, antenna_gain_tx=30)
+        return RadarParameters(
+            frequency=10e9, power_transmitted=1000, antenna_gain_tx=30
+        )
 
     def test_approaching_target_negative_doppler(self, radar_10ghz):
         """Target approaching radar should produce positive Doppler shift"""
@@ -369,7 +371,9 @@ class TestWavelengthFrequency:
 
     def test_10ghz_wavelength(self):
         """10 GHz should have wavelength of ~0.03 m"""
-        radar = RadarParameters(frequency=10e9, power_transmitted=1000, antenna_gain_tx=30)
+        radar = RadarParameters(
+            frequency=10e9, power_transmitted=1000, antenna_gain_tx=30
+        )
 
         expected_wavelength = SPEED_OF_LIGHT / 10e9
 
@@ -377,7 +381,9 @@ class TestWavelengthFrequency:
 
     def test_3ghz_wavelength(self):
         """3 GHz (S-band) should have wavelength of ~0.1 m"""
-        radar = RadarParameters(frequency=3e9, power_transmitted=1000, antenna_gain_tx=30)
+        radar = RadarParameters(
+            frequency=3e9, power_transmitted=1000, antenna_gain_tx=30
+        )
 
         expected_wavelength = SPEED_OF_LIGHT / 3e9  # ~0.1 m
 
@@ -385,7 +391,9 @@ class TestWavelengthFrequency:
 
     def test_60ghz_wavelength(self):
         """60 GHz should have wavelength of ~5 mm"""
-        radar = RadarParameters(frequency=60e9, power_transmitted=1000, antenna_gain_tx=30)
+        radar = RadarParameters(
+            frequency=60e9, power_transmitted=1000, antenna_gain_tx=30
+        )
 
         expected_wavelength = SPEED_OF_LIGHT / 60e9  # ~0.005 m
 
@@ -422,9 +430,9 @@ class TestRadarEquationSanity:
         # Power should decrease by factor of 16 (2^4)
         ratio = pr_10km / pr_20km
 
-        assert ratio == pytest.approx(
-            16.0, rel=0.01
-        ), f"Power ratio ({ratio:.2f}) should be 16 (R^4 law)"
+        assert ratio == pytest.approx(16.0, rel=0.01), (
+            f"Power ratio ({ratio:.2f}) should be 16 (R^4 law)"
+        )
 
     def test_snr_increases_with_rcs(self, radar):
         """SNR must increase with RCS"""
@@ -444,5 +452,11 @@ class TestRadarEquationSanity:
 
 if __name__ == "__main__":
     pytest.main(
-        [__file__, "-v", "--tb=short", "-m", "not slow"]  # Skip slow Monte Carlo tests by default
+        [
+            __file__,
+            "-v",
+            "--tb=short",
+            "-m",
+            "not slow",
+        ]  # Skip slow Monte Carlo tests by default
     )

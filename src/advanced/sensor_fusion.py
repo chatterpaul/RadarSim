@@ -57,7 +57,9 @@ class AdvancedSensorFusion:
 
         # İlk ölçümü başlangıç durumu olarak kullan
         initial_measurement = measurements[0]
-        state_dim = len(initial_measurement.position) + len(initial_measurement.velocity)
+        state_dim = len(initial_measurement.position) + len(
+            initial_measurement.velocity
+        )
 
         # Durum vektörü: [x, y, z, vx, vy, vz]
         x = np.zeros(state_dim)
@@ -102,11 +104,15 @@ class AdvancedSensorFusion:
 
         # Particle'ları başlat
         initial_measurement = measurements[0]
-        state_dim = len(initial_measurement.position) + len(initial_measurement.velocity)
+        state_dim = len(initial_measurement.position) + len(
+            initial_measurement.velocity
+        )
 
         # Particle'ları rastgele dağıt
         particles = np.random.multivariate_normal(
-            np.concatenate([initial_measurement.position, initial_measurement.velocity]),
+            np.concatenate(
+                [initial_measurement.position, initial_measurement.velocity]
+            ),
             np.eye(state_dim) * 100,
             n_particles,
         )
@@ -131,7 +137,9 @@ class AdvancedSensorFusion:
         weighted_cov = np.zeros((particles.shape[1], particles.shape[1]))
         for i in range(particles.shape[1]):
             for j in range(particles.shape[1]):
-                weighted_cov[i, j] = np.sum(weights * mean_centered[:, i] * mean_centered[:, j])
+                weighted_cov[i, j] = np.sum(
+                    weights * mean_centered[:, i] * mean_centered[:, j]
+                )
         fused_covariance = weighted_cov
 
         return {
@@ -142,7 +150,9 @@ class AdvancedSensorFusion:
             "effective_particles": self.effective_particle_size(weights),
         }
 
-    def dempster_shafer_fusion(self, measurements: List[SensorMeasurement]) -> Dict[str, Any]:
+    def dempster_shafer_fusion(
+        self, measurements: List[SensorMeasurement]
+    ) -> Dict[str, Any]:
         """
         Dempster-Shafer Theory tabanlı sensör füzyonu
 
@@ -202,7 +212,9 @@ class AdvancedSensorFusion:
 
         for measurement in measurements:
             # Likelihood hesaplama
-            likelihood_mean = np.concatenate([measurement.position, measurement.velocity])
+            likelihood_mean = np.concatenate(
+                [measurement.position, measurement.velocity]
+            )
             likelihood_cov = measurement.uncertainty
 
             # Bayesian update
@@ -222,7 +234,9 @@ class AdvancedSensorFusion:
             "sensor_count": len(measurements),
         }
 
-    def deep_sensor_fusion(self, measurements: List[SensorMeasurement]) -> Dict[str, Any]:
+    def deep_sensor_fusion(
+        self, measurements: List[SensorMeasurement]
+    ) -> Dict[str, Any]:
         """
         Deep Learning tabanlı sensör füzyonu
 
@@ -296,7 +310,11 @@ class AdvancedSensorFusion:
         return x_pred, P_pred
 
     def kalman_update(
-        self, x_pred: np.ndarray, P_pred: np.ndarray, measurement: SensorMeasurement, R: np.ndarray
+        self,
+        x_pred: np.ndarray,
+        P_pred: np.ndarray,
+        measurement: SensorMeasurement,
+        R: np.ndarray,
     ) -> Tuple[np.ndarray, np.ndarray]:
         """Kalman Filter update step"""
         # Measurement matrix
@@ -406,14 +424,18 @@ class AdvancedSensorFusion:
 
         return combined
 
-    def calculate_belief(self, mass: Dict[str, float], frame: List[str]) -> Dict[str, float]:
+    def calculate_belief(
+        self, mass: Dict[str, float], frame: List[str]
+    ) -> Dict[str, float]:
         """Belief function hesaplama"""
         belief = {}
         for key in frame:
             belief[key] = mass.get(key, 0)
         return belief
 
-    def calculate_plausibility(self, mass: Dict[str, float], frame: List[str]) -> Dict[str, float]:
+    def calculate_plausibility(
+        self, mass: Dict[str, float], frame: List[str]
+    ) -> Dict[str, float]:
         """Plausibility function hesaplama"""
         # Basitleştirilmiş plausibility
         plausibility = {}
@@ -474,7 +496,9 @@ class AdvancedSensorFusion:
         state = features[:6]  # İlk 6 element state
         return state
 
-    def assess_sensor_quality(self, measurements: List[SensorMeasurement]) -> Dict[str, float]:
+    def assess_sensor_quality(
+        self, measurements: List[SensorMeasurement]
+    ) -> Dict[str, float]:
         """Sensör kalitesi değerlendirmesi"""
         confidences = [m.confidence for m in measurements]
         uncertainties = [np.trace(m.uncertainty) for m in measurements]

@@ -85,7 +85,9 @@ class AdvancedSignalProcessor:
         Denklem: y(t) = ∫ x(τ) * h*(t-τ) dτ
         """
         # Cross-correlation (matched filtering)
-        filtered_signal = np.correlate(received_signal, np.conj(reference_signal), mode="full")
+        filtered_signal = np.correlate(
+            received_signal, np.conj(reference_signal), mode="full"
+        )
         return filtered_signal
 
     def cfar_detection(
@@ -172,10 +174,14 @@ class AdvancedSignalProcessor:
         Denklem: fd = 2 * vr / λ
         """
         # Range-Doppler matrisi üzerinde FFT
-        doppler_spectrum = np.fft.fftshift(np.fft.fft(range_doppler_data, axis=1), axes=1)
+        doppler_spectrum = np.fft.fftshift(
+            np.fft.fft(range_doppler_data, axis=1), axes=1
+        )
 
         # Doppler frekans ekseni
-        doppler_freqs = np.fft.fftshift(np.fft.fftfreq(range_doppler_data.shape[1], d=1 / prf))
+        doppler_freqs = np.fft.fftshift(
+            np.fft.fftfreq(range_doppler_data.shape[1], d=1 / prf)
+        )
 
         return doppler_spectrum, doppler_freqs
 
@@ -204,7 +210,10 @@ class AdvancedSignalProcessor:
         return filtered_data
 
     def adaptive_beamforming(
-        self, array_data: np.ndarray, target_angle: float, interference_angles: List[float] = None
+        self,
+        array_data: np.ndarray,
+        target_angle: float,
+        interference_angles: List[float] = None,
     ) -> np.ndarray:
         """
         Adaptif beamforming (Minimum Variance Distortionless Response)

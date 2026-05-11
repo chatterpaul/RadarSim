@@ -119,7 +119,9 @@ class ControlPanel(QWidget):
         freq_layout = QVBoxLayout(freq_group)
 
         self.freq_label = QLabel("10.0 GHz")
-        self.freq_label.setStyleSheet("color: #00dd66; font-size: 16px; font-weight: bold;")
+        self.freq_label.setStyleSheet(
+            "color: #00dd66; font-size: 16px; font-weight: bold;"
+        )
         self.freq_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         freq_layout.addWidget(self.freq_label)
 
@@ -137,7 +139,9 @@ class ControlPanel(QWidget):
         power_layout = QVBoxLayout(power_group)
 
         self.power_label = QLabel("100 kW")
-        self.power_label.setStyleSheet("color: #00dd66; font-size: 16px; font-weight: bold;")
+        self.power_label.setStyleSheet(
+            "color: #00dd66; font-size: 16px; font-weight: bold;"
+        )
         self.power_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         power_layout.addWidget(self.power_label)
 
@@ -155,7 +159,9 @@ class ControlPanel(QWidget):
         range_layout = QVBoxLayout(range_group)
 
         self.range_label = QLabel("150 km")
-        self.range_label.setStyleSheet("color: #00dd66; font-size: 16px; font-weight: bold;")
+        self.range_label.setStyleSheet(
+            "color: #00dd66; font-size: 16px; font-weight: bold;"
+        )
         self.range_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         range_layout.addWidget(self.range_label)
 
@@ -174,7 +180,9 @@ class ControlPanel(QWidget):
         speed_layout = QVBoxLayout(speed_group)
 
         self.speed_label = QLabel("1.0x")
-        self.speed_label.setStyleSheet("color: #00dd66; font-size: 16px; font-weight: bold;")
+        self.speed_label.setStyleSheet(
+            "color: #00dd66; font-size: 16px; font-weight: bold;"
+        )
         self.speed_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         speed_layout.addWidget(self.speed_label)
 
@@ -362,7 +370,9 @@ class ControlPanel(QWidget):
             if preset:
                 # Update info label with derived physics
                 wavelength_cm = preset.wavelength_m * 100
-                self.arch_info_label.setText(f"λ={wavelength_cm:.1f}cm | G={preset.gain_db:.1f}dB")
+                self.arch_info_label.setText(
+                    f"λ={wavelength_cm:.1f}cm | G={preset.gain_db:.1f}dB"
+                )
 
                 # Update sliders to match preset
                 freq_ghz = int(preset.frequency_hz / 1e9)

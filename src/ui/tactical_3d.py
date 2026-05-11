@@ -191,19 +191,25 @@ class TacticalMap3D(QWidget):
 
         # X-axis (East) - Red
         x_axis = gl.GLLinePlotItem(
-            pos=np.array([[0, 0, 0], [axis_len, 0, 0]]), color=(1, 0.3, 0.3, 0.8), width=2
+            pos=np.array([[0, 0, 0], [axis_len, 0, 0]]),
+            color=(1, 0.3, 0.3, 0.8),
+            width=2,
         )
         self.gl_view.addItem(x_axis)
 
         # Y-axis (North) - Green
         y_axis = gl.GLLinePlotItem(
-            pos=np.array([[0, 0, 0], [0, axis_len, 0]]), color=(0.3, 1, 0.3, 0.8), width=2
+            pos=np.array([[0, 0, 0], [0, axis_len, 0]]),
+            color=(0.3, 1, 0.3, 0.8),
+            width=2,
         )
         self.gl_view.addItem(y_axis)
 
         # Z-axis (Up) - Blue
         z_axis = gl.GLLinePlotItem(
-            pos=np.array([[0, 0, 0], [0, 0, axis_len / 5]]), color=(0.3, 0.5, 1, 0.8), width=2
+            pos=np.array([[0, 0, 0], [0, 0, axis_len / 5]]),
+            color=(0.3, 0.5, 1, 0.8),
+            width=2,
         )
         self.gl_view.addItem(z_axis)
 
@@ -230,7 +236,9 @@ class TacticalMap3D(QWidget):
         )
         self.gl_view.addItem(self.radar_marker)
 
-    def set_terrain(self, x_grid: np.ndarray, y_grid: np.ndarray, elevation: np.ndarray) -> None:
+    def set_terrain(
+        self, x_grid: np.ndarray, y_grid: np.ndarray, elevation: np.ndarray
+    ) -> None:
         """
         Set terrain surface data.
 
@@ -280,7 +288,9 @@ class TacticalMap3D(QWidget):
             for j in range(resolution):
                 x_m = x_grid[i, j] * 1000
                 y_m = y_grid[i, j] * 1000
-                elevation[i, j] = terrain_map.get_elevation(x_m, y_m) / 1000  # Convert m to km
+                elevation[i, j] = (
+                    terrain_map.get_elevation(x_m, y_m) / 1000
+                )  # Convert m to km
 
         self.set_terrain(x_grid, y_grid, elevation)
 
@@ -333,7 +343,9 @@ class TacticalMap3D(QWidget):
             z_km = target.get("altitude_m", target.get("z", 0)) / 1000
 
             # Handle position arrays
-            if "position" in target and isinstance(target["position"], (list, np.ndarray)):
+            if "position" in target and isinstance(
+                target["position"], (list, np.ndarray)
+            ):
                 pos = target["position"]
                 x_km = pos[0] / 1000
                 y_km = pos[1] / 1000
@@ -369,7 +381,9 @@ class TacticalMap3D(QWidget):
             size_array = np.array(sizes)
 
             if self.target_scatter is not None:
-                self.target_scatter.setData(pos=pos_array, size=size_array, color=color_array)
+                self.target_scatter.setData(
+                    pos=pos_array, size=size_array, color=color_array
+                )
 
         # ═══ PHASE 27: EKF Uncertainty Ellipses ═══
         self._render_uncertainty_ellipses(state)
@@ -428,7 +442,9 @@ class TacticalMap3D(QWidget):
                 continue
 
             # Compute ellipse points (in meters, then convert to km)
-            ellipse_pts = ExtendedKalmanFilter.uncertainty_ellipse(P, confidence=0.95, n_points=32)
+            ellipse_pts = ExtendedKalmanFilter.uncertainty_ellipse(
+                P, confidence=0.95, n_points=32
+            )
             ellipse_km = ellipse_pts / 1000.0  # Convert m → km
 
             # Create 3D line at target altitude
@@ -471,7 +487,9 @@ class TacticalMap3D(QWidget):
             azimuth: Azimuth angle [degrees]
         """
         if OPENGL_AVAILABLE:
-            self.gl_view.setCameraPosition(distance=distance, elevation=elevation, azimuth=azimuth)
+            self.gl_view.setCameraPosition(
+                distance=distance, elevation=elevation, azimuth=azimuth
+            )
 
     # ═══════════════════════════════════════════════════════════════
     # PHASE 29: NETWORK FUSION VISUALIZATION

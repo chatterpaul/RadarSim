@@ -381,7 +381,9 @@ def _calculate_received_power_jit(
     four_pi_cubed = 1984.401710639287
 
     numerator = power_tx * gain_tx_linear * gain_rx_linear * (wavelength**2) * rcs
-    denominator = four_pi_cubed * (range_m**4) * loss_tx_linear * loss_rx_linear * atm_loss_linear
+    denominator = (
+        four_pi_cubed * (range_m**4) * loss_tx_linear * loss_rx_linear * atm_loss_linear
+    )
 
     return numerator / denominator
 
@@ -449,7 +451,10 @@ def _calculate_doppler_shift_jit(radial_velocity: float, wavelength: float) -> f
 
 @numba.jit(nopython=True, cache=True)
 def _calculate_radial_velocity_jit(
-    target_pos: np.ndarray, target_vel: np.ndarray, radar_pos: np.ndarray, radar_vel: np.ndarray
+    target_pos: np.ndarray,
+    target_vel: np.ndarray,
+    radar_pos: np.ndarray,
+    radar_vel: np.ndarray,
 ) -> float:
     """
     JIT-compiled radial velocity calculation
@@ -598,7 +603,9 @@ def calculate_snr(
     noise_figure_linear = 10 ** (radar.noise_figure / 10)
     bandwidth = 1.0 / radar.pulse_width  # Approximation: B ≈ 1/τ
 
-    noise_power = _calculate_noise_power_jit(radar.temperature, bandwidth, noise_figure_linear)
+    noise_power = _calculate_noise_power_jit(
+        radar.temperature, bandwidth, noise_figure_linear
+    )
 
     return _calculate_snr_jit(received_power, noise_power)
 
@@ -629,7 +636,9 @@ def calculate_detection_range(
     min_snr_linear = 10 ** (min_snr_db / 10)
 
     bandwidth = 1.0 / radar.pulse_width
-    noise_power = _calculate_noise_power_jit(radar.temperature, bandwidth, noise_figure_linear)
+    noise_power = _calculate_noise_power_jit(
+        radar.temperature, bandwidth, noise_figure_linear
+    )
 
     return _calculate_detection_range_jit(
         radar.power_transmitted,
@@ -679,7 +688,9 @@ def calculate_doppler_shift(
     radar_pos = np.asarray(radar_pos, dtype=np.float64)
     radar_vel = np.asarray(radar_vel, dtype=np.float64)
 
-    radial_velocity = _calculate_radial_velocity_jit(target_pos, target_vel, radar_pos, radar_vel)
+    radial_velocity = _calculate_radial_velocity_jit(
+        target_pos, target_vel, radar_pos, radar_vel
+    )
 
     return _calculate_doppler_shift_jit(radial_velocity, radar.wavelength)
 
@@ -832,7 +843,9 @@ def _calculate_bistatic_received_power_jit(
 
     four_pi_cubed = 1984.401710639287
 
-    numerator = power_tx * gain_tx_linear * gain_rx_linear * (wavelength**2) * rcs_bistatic
+    numerator = (
+        power_tx * gain_tx_linear * gain_rx_linear * (wavelength**2) * rcs_bistatic
+    )
     denominator = four_pi_cubed * (range_tx**2) * (range_rx**2) * loss_linear
 
     return numerator / denominator

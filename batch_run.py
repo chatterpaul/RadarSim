@@ -35,7 +35,11 @@ except ImportError:
 # Add project root to path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from src.simulation.headless_runner import SimulationConfig, SimulationResult, run_single_simulation
+from src.simulation.headless_runner import (
+    SimulationConfig,
+    SimulationResult,
+    run_single_simulation,
+)
 from src.simulation.scenario_generator import ParameterSpace, ScenarioGenerator
 
 
@@ -83,7 +87,9 @@ def run_batch(
         else:
             # Without progress bar
             print("Running simulations...")
-            for i, result in enumerate(pool.imap_unordered(run_single_simulation, configs)):
+            for i, result in enumerate(
+                pool.imap_unordered(run_single_simulation, configs)
+            ):
                 results.append(result)
                 if (i + 1) % 10 == 0:
                     print(f"  Completed: {i + 1}/{len(configs)}")
@@ -146,10 +152,16 @@ def _print_summary(results: List[SimulationResult], total_time: float) -> None:
 def main():
     parser = argparse.ArgumentParser(description="Run Monte Carlo radar simulations")
     parser.add_argument(
-        "--configs", type=int, default=None, help="Number of configurations (default: auto)"
+        "--configs",
+        type=int,
+        default=None,
+        help="Number of configurations (default: auto)",
     )
     parser.add_argument(
-        "--runs", type=int, default=5, help="Monte Carlo runs per configuration (default: 5)"
+        "--runs",
+        type=int,
+        default=5,
+        help="Monte Carlo runs per configuration (default: 5)",
     )
     parser.add_argument(
         "--workers",
@@ -194,7 +206,9 @@ def main():
         configs = configs[: args.configs]
 
     # Run batch
-    results = run_batch(configs=configs, n_workers=args.workers, output_file=args.output)
+    results = run_batch(
+        configs=configs, n_workers=args.workers, output_file=args.output
+    )
 
     return 0
 

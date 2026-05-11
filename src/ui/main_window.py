@@ -467,12 +467,16 @@ class MainWindow(QMainWindow):
 
         self.fusion_particle = QAction("Particle Filter", self)
         self.fusion_particle.setCheckable(True)
-        self.fusion_particle.triggered.connect(lambda: self._set_fusion_method("particle"))
+        self.fusion_particle.triggered.connect(
+            lambda: self._set_fusion_method("particle")
+        )
         fusion_menu.addAction(self.fusion_particle)
 
         self.fusion_bayesian = QAction("Bayesian Fusion", self)
         self.fusion_bayesian.setCheckable(True)
-        self.fusion_bayesian.triggered.connect(lambda: self._set_fusion_method("bayesian"))
+        self.fusion_bayesian.triggered.connect(
+            lambda: self._set_fusion_method("bayesian")
+        )
         fusion_menu.addAction(self.fusion_bayesian)
 
         advanced_menu.addSeparator()
@@ -498,7 +502,9 @@ class MainWindow(QMainWindow):
         self.mti_action = QAction("🔍 Enable &MTI Filter", self)
         self.mti_action.setCheckable(True)
         self.mti_action.setChecked(False)
-        self.mti_action.setToolTip("Moving Target Indication: Filters slow/stationary targets")
+        self.mti_action.setToolTip(
+            "Moving Target Indication: Filters slow/stationary targets"
+        )
         self.mti_action.triggered.connect(self._on_mti_toggled)
         advanced_menu.addAction(self.mti_action)
 
@@ -506,7 +512,9 @@ class MainWindow(QMainWindow):
         self.eccm_action = QAction("⚡ ECCM: Frequency &Agility", self)
         self.eccm_action.setCheckable(True)
         self.eccm_action.setChecked(False)
-        self.eccm_action.setToolTip("Counter-jamming: Hop frequency to defeat spot jammers")
+        self.eccm_action.setToolTip(
+            "Counter-jamming: Hop frequency to defeat spot jammers"
+        )
         self.eccm_action.triggered.connect(self._on_eccm_toggled)
         advanced_menu.addAction(self.eccm_action)
 
@@ -516,7 +524,9 @@ class MainWindow(QMainWindow):
         self.monopulse_action = QAction("🎯 Enable &Monopulse Tracking", self)
         self.monopulse_action.setCheckable(True)
         self.monopulse_action.setChecked(False)
-        self.monopulse_action.setToolTip("Sum/Difference pattern: Sub-beamwidth angular accuracy")
+        self.monopulse_action.setToolTip(
+            "Sum/Difference pattern: Sub-beamwidth angular accuracy"
+        )
         self.monopulse_action.triggered.connect(self._on_monopulse_toggled)
         advanced_menu.addAction(self.monopulse_action)
 
@@ -590,7 +600,7 @@ class MainWindow(QMainWindow):
         self.prf_stagger_action.setCheckable(True)
         self.prf_stagger_action.setChecked(False)
         self.prf_stagger_action.setToolTip(
-            "Vary PRI ±5% to defeat RGPO\n" "Reference: Schleher (1999), Ch. 8.4"
+            "Vary PRI ±5% to defeat RGPO\nReference: Schleher (1999), Ch. 8.4"
         )
         self.prf_stagger_action.triggered.connect(self._on_prf_stagger_toggled)
         ew_menu.addAction(self.prf_stagger_action)
@@ -671,7 +681,7 @@ class MainWindow(QMainWindow):
         detections = state.get("detection_count", 0)
         total = state.get("total_targets", 0)
         self.status_bar.showMessage(
-            f"TIME: {time_s:.1f}s | " f"TARGETS: {total} | " f"DETECTIONS: {detections}"
+            f"TIME: {time_s:.1f}s | TARGETS: {total} | DETECTIONS: {detections}"
         )
 
     @pyqtSlot(str)
@@ -691,7 +701,9 @@ class MainWindow(QMainWindow):
         self.status_bar.showMessage(f"TARGET {target_id} SELECTED")
 
     @pyqtSlot(bool, str, int)
-    def _on_ecm_state_changed(self, active: bool, ecm_type: str, target_id: int) -> None:
+    def _on_ecm_state_changed(
+        self, active: bool, ecm_type: str, target_id: int
+    ) -> None:
         """
         Handle ECM state change from TargetInspector.
 
@@ -785,12 +797,16 @@ class MainWindow(QMainWindow):
 
             # 4. Show status
             wavelength_cm = preset.wavelength_m * 100
-            display_name = "B-SCOPE" if preset.display_type == DisplayType.B_SCOPE else "PPI"
+            display_name = (
+                "B-SCOPE" if preset.display_type == DisplayType.B_SCOPE else "PPI"
+            )
             self.status_bar.showMessage(
                 f"RADAR: {preset.name} | {display_name} | λ={wavelength_cm:.1f}cm | G={preset.gain_db:.1f}dB"
             )
 
-            print(f"[ARCH] Switched to {display_name} display, limits={preset.sector_limits}")
+            print(
+                f"[ARCH] Switched to {display_name} display, limits={preset.sector_limits}"
+            )
 
         except Exception as e:
             print(f"[ARCH] Error applying preset to scope: {e}")
@@ -891,7 +907,10 @@ class MainWindow(QMainWindow):
     def _on_load_scenario(self) -> None:
         """Handle File > Load Scenario action."""
         filepath, _ = QFileDialog.getOpenFileName(
-            self, "Load Scenario", "scenarios", "YAML Files (*.yaml *.yml);;All Files (*)"
+            self,
+            "Load Scenario",
+            "scenarios",
+            "YAML Files (*.yaml *.yml);;All Files (*)",
         )
 
         if not filepath:
@@ -1097,7 +1116,9 @@ class MainWindow(QMainWindow):
 
         # Radar preset
         if hasattr(self, "control_panel") and self.control_panel:
-            settings.setValue("radar/preset_index", self.control_panel.arch_combo.currentIndex())
+            settings.setValue(
+                "radar/preset_index", self.control_panel.arch_combo.currentIndex()
+            )
 
         print("[SETTINGS] Saved configuration")
 
@@ -1129,8 +1150,12 @@ class MainWindow(QMainWindow):
             self.sim_thread.set_lpi_mode(checked, self.lpi_technique)
 
         status = "ACTIVE" if checked else "OFF"
-        self.status_bar.showMessage(f"LPI MODE: {status} | Technique: {self.lpi_technique}")
-        print(f"[LPI] Mode={'ON' if checked else 'OFF'}, Technique={self.lpi_technique}")
+        self.status_bar.showMessage(
+            f"LPI MODE: {status} | Technique: {self.lpi_technique}"
+        )
+        print(
+            f"[LPI] Mode={'ON' if checked else 'OFF'}, Technique={self.lpi_technique}"
+        )
 
     def _set_lpi_technique(self, technique: str) -> None:
         """Set LPI waveform technique."""
@@ -1158,8 +1183,12 @@ class MainWindow(QMainWindow):
             self.sim_thread.set_fusion_mode(checked, self.fusion_method)
 
         status = "ACTIVE" if checked else "OFF"
-        self.status_bar.showMessage(f"SENSOR FUSION: {status} | Method: {self.fusion_method}")
-        print(f"[FUSION] Mode={'ON' if checked else 'OFF'}, Method={self.fusion_method}")
+        self.status_bar.showMessage(
+            f"SENSOR FUSION: {status} | Method: {self.fusion_method}"
+        )
+        print(
+            f"[FUSION] Mode={'ON' if checked else 'OFF'}, Method={self.fusion_method}"
+        )
 
     def _set_fusion_method(self, method: str) -> None:
         """Set sensor fusion method."""
@@ -1204,7 +1233,11 @@ class MainWindow(QMainWindow):
 
             # Create SAR processor
             sar = AdvancedSARISAR(
-                fc=10e9, bandwidth=100e6, prf=1000, platform_velocity=100, synthetic_aperture=100
+                fc=10e9,
+                bandwidth=100e6,
+                prf=1000,
+                platform_velocity=100,
+                synthetic_aperture=100,
             )
 
             # Extract target positions and RCS
@@ -1241,7 +1274,9 @@ class MainWindow(QMainWindow):
             print(f"[SAR] Advanced module not available: {e}")
             # Generate demo image as fallback
             self.sar_viewer._generate_demo_image()
-            self.status_bar.showMessage("SAR Demo Image generated (advanced module unavailable)")
+            self.status_bar.showMessage(
+                "SAR Demo Image generated (advanced module unavailable)"
+            )
         except Exception as e:
             print(f"[SAR] Error generating image: {e}")
             self.sar_viewer._generate_demo_image()
@@ -1289,7 +1324,11 @@ class MainWindow(QMainWindow):
 
     def _on_pulse_doppler_toggled(self, checked: bool) -> None:
         """Handle Pulse-Doppler Processing toggle."""
-        mti_order = 1 if hasattr(self, "pd_mti_action") and self.pd_mti_action.isChecked() else 0
+        mti_order = (
+            1
+            if hasattr(self, "pd_mti_action") and self.pd_mti_action.isChecked()
+            else 0
+        )
         if self.sim_thread and hasattr(self.sim_thread, "set_pulse_doppler_mode"):
             self.sim_thread.set_pulse_doppler_mode(
                 enabled=checked, n_pulses=64, prf_hz=1000.0, mti_order=mti_order
@@ -1302,7 +1341,11 @@ class MainWindow(QMainWindow):
         """Handle MTI Canceller toggle within Pulse-Doppler mode."""
         mti_order = 1 if checked else 0
         pd_enabled = hasattr(self, "pd_action") and self.pd_action.isChecked()
-        if pd_enabled and self.sim_thread and hasattr(self.sim_thread, "set_pulse_doppler_mode"):
+        if (
+            pd_enabled
+            and self.sim_thread
+            and hasattr(self.sim_thread, "set_pulse_doppler_mode")
+        ):
             self.sim_thread.set_pulse_doppler_mode(
                 enabled=True, n_pulses=64, prf_hz=1000.0, mti_order=mti_order
             )
@@ -1335,7 +1378,9 @@ class MainWindow(QMainWindow):
         if self.sim_thread and hasattr(self.sim_thread, "set_freq_agility"):
             self.sim_thread.set_freq_agility(checked)
 
-        status = "📡 FREQ AGILITY ON (10 hops, -10 dB J/S)" if checked else "Fixed frequency"
+        status = (
+            "📡 FREQ AGILITY ON (10 hops, -10 dB J/S)" if checked else "Fixed frequency"
+        )
         self.status_bar.showMessage(f"ECCM: {status}")
 
     def _on_prf_stagger_toggled(self, checked: bool) -> None:
@@ -1354,7 +1399,10 @@ class MainWindow(QMainWindow):
 
         # Get filename
         filepath, _ = QFileDialog.getSaveFileName(
-            self, "Save Scenario", "scenarios/custom_scenario.yaml", "YAML Files (*.yaml *.yml)"
+            self,
+            "Save Scenario",
+            "scenarios/custom_scenario.yaml",
+            "YAML Files (*.yaml *.yml)",
         )
 
         if not filepath:

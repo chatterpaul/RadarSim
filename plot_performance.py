@@ -106,11 +106,15 @@ def plot_pd_vs_snr(df: "pd.DataFrame", save_path: Optional[str] = None) -> None:
     # Extract bin centers
     bin_centers = [interval.mid for interval in grouped.index]
 
-    ax.plot(bin_centers, grouped.values, "o-", color="#00d4ff", linewidth=2, markersize=8)
+    ax.plot(
+        bin_centers, grouped.values, "o-", color="#00d4ff", linewidth=2, markersize=8
+    )
 
     # Add threshold line
     threshold = df["threshold_db"].iloc[0] if "threshold_db" in df.columns else 13
-    ax.axvline(threshold, color="red", linestyle="--", label=f"Threshold = {threshold} dB")
+    ax.axvline(
+        threshold, color="red", linestyle="--", label=f"Threshold = {threshold} dB"
+    )
 
     ax.set_xlabel("Signal-to-Noise Ratio (dB)", fontsize=12)
     ax.set_ylabel("Probability of Detection ($P_d$)", fontsize=12)
@@ -136,13 +140,20 @@ def plot_snr_heatmap(df: "pd.DataFrame", save_path: Optional[str] = None) -> Non
     fig, ax = plt.subplots(figsize=(10, 6))
 
     # Pivot table
-    pivot = df.pivot_table(values="mean_snr_db", index="rcs_m2", columns="range_km", aggfunc="mean")
+    pivot = df.pivot_table(
+        values="mean_snr_db", index="rcs_m2", columns="range_km", aggfunc="mean"
+    )
 
     im = ax.imshow(
         pivot.values,
         aspect="auto",
         cmap="plasma",
-        extent=[pivot.columns.min(), pivot.columns.max(), pivot.index.min(), pivot.index.max()],
+        extent=[
+            pivot.columns.min(),
+            pivot.columns.max(),
+            pivot.index.min(),
+            pivot.index.max(),
+        ],
         origin="lower",
     )
 
@@ -207,7 +218,9 @@ def generate_report(df: "pd.DataFrame", save_path: str) -> None:
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Plot radar performance from batch results")
+    parser = argparse.ArgumentParser(
+        description="Plot radar performance from batch results"
+    )
     parser.add_argument("input", type=str, help="Input CSV file from batch_run.py")
     parser.add_argument(
         "--save",

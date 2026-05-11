@@ -55,7 +55,9 @@ class TestLFMCompressionGain:
 
     def test_compression_gain_matches_samples(self):
         """Compression gain should match 10*log10(N) for N samples"""
-        result = validate_lfm_compression_gain(bandwidth=10e6, pulse_width=10e-6, sample_rate=100e6)
+        result = validate_lfm_compression_gain(
+            bandwidth=10e6, pulse_width=10e-6, sample_rate=100e6
+        )
 
         computed_gain = result["computed_values"]["compression_gain_dB"]
         expected_gain = result["expected_values"]["theoretical_gain_dB"]
@@ -85,9 +87,9 @@ class TestLFMCompressionGain:
             )
 
             tbp = result["parameters"]["time_bandwidth_product"]
-            assert (
-                abs(tbp - expected_tbp) < 0.1
-            ), f"TBP ({tbp}) does not match expected ({expected_tbp})"
+            assert abs(tbp - expected_tbp) < 0.1, (
+                f"TBP ({tbp}) does not match expected ({expected_tbp})"
+            )
 
 
 # =============================================================================
@@ -127,18 +129,18 @@ class TestBarker13PSL:
         result = validate_barker13_psl()
         main_peak = result["computed_values"]["main_peak"]
 
-        assert main_peak == pytest.approx(
-            13.0, abs=0.01
-        ), f"Main peak ({main_peak}) should equal code length (13)"
+        assert main_peak == pytest.approx(13.0, abs=0.01), (
+            f"Main peak ({main_peak}) should equal code length (13)"
+        )
 
     def test_max_sidelobe_equals_one(self):
         """Maximum sidelobe for Barker codes should be exactly 1"""
         result = validate_barker13_psl()
         max_sidelobe = result["computed_values"]["max_sidelobe"]
 
-        assert max_sidelobe == pytest.approx(
-            1.0, abs=0.01
-        ), f"Max sidelobe ({max_sidelobe}) should be exactly 1"
+        assert max_sidelobe == pytest.approx(1.0, abs=0.01), (
+            f"Max sidelobe ({max_sidelobe}) should be exactly 1"
+        )
 
 
 # =============================================================================
@@ -177,7 +179,9 @@ class TestCFARFalseAlarmRate:
 
         # Allow more variance for lower Pfa
         ratio = result["computed_values"]["ratio_to_target"]
-        assert 0.2 < ratio < 5.0, f"CFAR Pfa ratio ({ratio:.2f}) outside acceptable range"
+        assert 0.2 < ratio < 5.0, (
+            f"CFAR Pfa ratio ({ratio:.2f}) outside acceptable range"
+        )
 
 
 # =============================================================================
@@ -217,14 +221,14 @@ class TestBarkerCodes:
             max_sidelobe = np.max(sidelobes)
 
             # PSL should be exactly 1
-            assert max_sidelobe == pytest.approx(
-                1.0, abs=0.01
-            ), f"Barker-{length} max sidelobe ({max_sidelobe}) should be 1"
+            assert max_sidelobe == pytest.approx(1.0, abs=0.01), (
+                f"Barker-{length} max sidelobe ({max_sidelobe}) should be 1"
+            )
 
             # Main peak should equal N
-            assert main_peak == pytest.approx(
-                float(length), abs=0.01
-            ), f"Barker-{length} main peak ({main_peak}) should be {length}"
+            assert main_peak == pytest.approx(float(length), abs=0.01), (
+                f"Barker-{length} main peak ({main_peak}) should be {length}"
+            )
 
 
 # =============================================================================
@@ -294,7 +298,9 @@ class TestMatchedFilter:
         # Create pulse + noise
         pulse_length = 100
         pulse = np.ones(pulse_length, dtype=complex)
-        noise = (np.random.randn(pulse_length) + 1j * np.random.randn(pulse_length)) * 0.1
+        noise = (
+            np.random.randn(pulse_length) + 1j * np.random.randn(pulse_length)
+        ) * 0.1
         signal = pulse + noise
 
         # Apply matched filter
@@ -325,7 +331,9 @@ class TestCFARDetector:
         target_idx = 500
         noise[target_idx] = 100 * np.mean(noise)  # 20 dB above noise
 
-        detector = CFARDetector(guard_cells=2, reference_cells=16, pfa=1e-4, cfar_type=CFARType.CA)
+        detector = CFARDetector(
+            guard_cells=2, reference_cells=16, pfa=1e-4, cfar_type=CFARType.CA
+        )
 
         detections, _ = detector.detect(noise)
 

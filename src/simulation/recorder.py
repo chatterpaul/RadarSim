@@ -252,7 +252,9 @@ class FlightRecorder:
         with self._lock:
             return {
                 "is_recording": self.is_recording,
-                "duration_s": self.session.timestamps[-1] if self.session.timestamps else 0,
+                "duration_s": self.session.timestamps[-1]
+                if self.session.timestamps
+                else 0,
                 "num_snapshots": len(self.session.timestamps),
                 "num_targets": len(self.session.target_tracks),
                 "num_measurements": len(self.session.measurements),

@@ -60,7 +60,9 @@ class GeoMapVisualizer:
         self.converter = GeoConverter(origin_lat, origin_lon)
         self.zoom = zoom
 
-    def plot_on_map(self, geo_points: List[Tuple[float, float, str]], dem: np.ndarray = None):
+    def plot_on_map(
+        self, geo_points: List[Tuple[float, float, str]], dem: np.ndarray = None
+    ):
         """
         OpenStreetMap üzerinde radar, hedef ve füze konumlarını gösterir.
         geo_points: [(lat, lon, label)]
@@ -73,7 +75,10 @@ class GeoMapVisualizer:
 
         fig, ax = plt.subplots(figsize=(10, 8))
         ax.scatter(
-            xs, ys, c=["g" if "Radar" in l else "r" if "Hedef" in l else "c" for l in labels], s=80
+            xs,
+            ys,
+            c=["g" if "Radar" in l else "r" if "Hedef" in l else "c" for l in labels],
+            s=80,
         )
         for x, y, label in zip(xs, ys, labels):
             ax.text(x, y, label, fontsize=12)
@@ -88,18 +93,27 @@ class GeoMapVisualizer:
                 # Dönüşüm: x/y -> Web Mercator (EPSG:3857)
                 import pyproj
 
-                proj = pyproj.Transformer.from_crs("epsg:4326", "epsg:3857", always_xy=True)
+                proj = pyproj.Transformer.from_crs(
+                    "epsg:4326", "epsg:3857", always_xy=True
+                )
                 xs_merc, ys_merc = proj.transform(
                     [lon for _, lon, _ in geo_points], [lat for lat, _, _ in geo_points]
                 )
-                ax.scatter(xs_merc, ys_merc, c="none")  # Sadece eksenleri ayarlamak için
+                ax.scatter(
+                    xs_merc, ys_merc, c="none"
+                )  # Sadece eksenleri ayarlamak için
                 ctx.add_basemap(ax, crs="epsg:3857", zoom=self.zoom)
             except Exception as e:
                 print(f"OSM harita katmanı eklenemedi: {e}")
 
         # DEM (yükseklik) haritası ekle
         if dem is not None:
-            ax.imshow(dem, extent=[min(xs), max(xs), min(ys), max(ys)], alpha=0.3, cmap="terrain")
+            ax.imshow(
+                dem,
+                extent=[min(xs), max(xs), min(ys), max(ys)],
+                alpha=0.3,
+                cmap="terrain",
+            )
 
         plt.tight_layout()
         plt.show()
@@ -114,4 +128,6 @@ if __name__ == "__main__":
     geo_points = [radar_geo, target_geo, missile_geo]
     visualizer = GeoMapVisualizer(origin_lat=39.9208, origin_lon=32.8541)
     visualizer.plot_on_map(geo_points)
-    print("Gerçek dünya harita entegrasyonu tamamlandı. [Kaynak: NATO RTO-TR-SET-093, 2009]")
+    print(
+        "Gerçek dünya harita entegrasyonu tamamlandı. [Kaynak: NATO RTO-TR-SET-093, 2009]"
+    )

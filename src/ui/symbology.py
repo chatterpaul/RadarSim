@@ -231,7 +231,9 @@ class SymbolGenerator:
             ]
         )
 
-    def get_symbol_polygon(self, affiliation: Affiliation, size: int = SYMBOL_SIZE) -> QPolygonF:
+    def get_symbol_polygon(
+        self, affiliation: Affiliation, size: int = SYMBOL_SIZE
+    ) -> QPolygonF:
         """Get appropriate polygon for affiliation."""
         return {
             Affiliation.HOSTILE: self.create_hostile_symbol(size),
@@ -308,7 +310,7 @@ class SymbolGenerator:
             painter.setFont(self.font)
             painter.setPen(QColor(200, 200, 200, 180))
             alt_label = (
-                f"{symbol.altitude_m/1000:.1f}km"
+                f"{symbol.altitude_m / 1000:.1f}km"
                 if symbol.altitude_m >= 1000
                 else f"{symbol.altitude_m:.0f}m"
             )
@@ -347,7 +349,8 @@ class SymbolGenerator:
 
 
 def create_symbol_scatter_data(
-    targets: List[Dict[str, Any]], affiliation_map: Optional[Dict[int, Affiliation]] = None
+    targets: List[Dict[str, Any]],
+    affiliation_map: Optional[Dict[int, Affiliation]] = None,
 ) -> Tuple[np.ndarray, np.ndarray, List[str], List[QColor]]:
     """
     Convert target list to PyQtGraph scatter plot data with MIL-STD symbols.
@@ -403,7 +406,9 @@ def get_affiliation_from_name(name: str) -> Affiliation:
     name_lower = name.lower()
 
     # Hostile indicators
-    if any(term in name_lower for term in ["bandit", "hostile", "bogey", "enemy", "red"]):
+    if any(
+        term in name_lower for term in ["bandit", "hostile", "bogey", "enemy", "red"]
+    ):
         return Affiliation.HOSTILE
 
     # Friendly indicators

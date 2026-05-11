@@ -37,4 +37,10 @@ try:
         "TrackStatus",
     ]
 except ImportError:
-    __all__ = ["LinearKalmanFilter", "KalmanState", "TrackManager", "Track", "TrackStatus"]
+    __all__ = [
+        "LinearKalmanFilter",
+        "KalmanState",
+        "TrackManager",
+        "Track",
+        "TrackStatus",
+    ]

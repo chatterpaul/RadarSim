@@ -77,7 +77,12 @@ class RadarSimSplash(QSplashScreen):
         sub_font = QFont("Consolas", 11)
         painter.setFont(sub_font)
         painter.drawText(
-            0, 100, width, 30, Qt.AlignmentFlag.AlignCenter, "Professional Radar Simulation Engine"
+            0,
+            100,
+            width,
+            30,
+            Qt.AlignmentFlag.AlignCenter,
+            "Professional Radar Simulation Engine",
         )
 
         # Version
@@ -85,7 +90,12 @@ class RadarSimSplash(QSplashScreen):
         ver_font = QFont("Consolas", 9)
         painter.setFont(ver_font)
         painter.drawText(
-            0, height - 35, width, 20, Qt.AlignmentFlag.AlignCenter, f"Version {self.VERSION}"
+            0,
+            height - 35,
+            width,
+            20,
+            Qt.AlignmentFlag.AlignCenter,
+            f"Version {self.VERSION}",
         )
 
         # Decorative radar rings

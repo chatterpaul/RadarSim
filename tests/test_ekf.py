@@ -122,7 +122,9 @@ class TestStraightLineTracking:
 
     def test_convergence(self, ekf):
         """EKF must converge to < 100m RMS on straight-line target."""
-        ekf_track = ExtendedKalmanFilter(process_noise=1.0, range_std=30.0, angle_std=0.01)
+        ekf_track = ExtendedKalmanFilter(
+            process_noise=1.0, range_std=30.0, angle_std=0.01
+        )
         state = ekf_track.initialize(position=(10000.0, 0.0), velocity=(100.0, 50.0))
 
         dt = 1.0
@@ -156,12 +158,14 @@ class TestStraightLineTracking:
             state = ekf.predict(state, dt=1.0)
             r = np.sqrt(state.x[0] ** 2 + state.x[1] ** 2)
             theta = np.arctan2(state.x[1], state.x[0])
-            state = ekf.update(state, (r + rng.normal(0, 50), theta + rng.normal(0, 0.02)))
+            state = ekf.update(
+                state, (r + rng.normal(0, 50), theta + rng.normal(0, 0.02))
+            )
 
         final_trace = np.trace(state.P)
-        assert (
-            final_trace < initial_trace
-        ), f"Covariance did not shrink: {initial_trace:.0f} → {final_trace:.0f}"
+        assert final_trace < initial_trace, (
+            f"Covariance did not shrink: {initial_trace:.0f} → {final_trace:.0f}"
+        )
 
 
 # ═══════════════════════════════════════════════════════════════════
@@ -263,7 +267,9 @@ class TestTurnTracking:
 
             # EKF update
             ekf_state = ekf.predict(ekf_state, dt)
-            ekf_state = ekf.update(ekf_state, (true_r + noise_r, true_theta + noise_theta))
+            ekf_state = ekf.update(
+                ekf_state, (true_r + noise_r, true_theta + noise_theta)
+            )
             ekf_errors.append(
                 np.sqrt((ekf_state.x[0] - true_x) ** 2 + (ekf_state.x[1] - true_y) ** 2)
             )
@@ -309,9 +315,9 @@ class TestAngleWrapping:
     def test_wrap_angle(self, angle, expected):
         """Wrapped angle must be in [-π, π]."""
         result = ExtendedKalmanFilter._wrap_angle(angle)
-        assert (
-            abs(result - expected) < 1e-10 or abs(abs(result) - np.pi) < 1e-10
-        ), f"wrap({angle:.4f}) = {result:.4f}, expected {expected:.4f}"
+        assert abs(result - expected) < 1e-10 or abs(abs(result) - np.pi) < 1e-10, (
+            f"wrap({angle:.4f}) = {result:.4f}, expected {expected:.4f}"
+        )
 
     def test_wrapped_in_range(self):
         """All wrapped angles must be in [-π, π]."""
@@ -353,7 +359,7 @@ class TestAdaptiveR:
         for i in range(len(R_values) - 1):
             assert R_values[i] <= R_values[i + 1], (
                 f"R not monotonic: R[{snr_values[i]}dB]={R_values[i]:.0f} "
-                f"> R[{snr_values[i+1]}dB]={R_values[i+1]:.0f}"
+                f"> R[{snr_values[i + 1]}dB]={R_values[i + 1]:.0f}"
             )
 
     def test_adapt_disabled(self):

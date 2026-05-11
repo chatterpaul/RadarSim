@@ -100,7 +100,10 @@ class PPIScope(QWidget):
     COLOR_UNKNOWN = QColor(255, 255, 0)  # Yellow
 
     def __init__(
-        self, max_range_km: float = 150.0, phosphor_decay_s: float = 5.0, parent: QWidget = None
+        self,
+        max_range_km: float = 150.0,
+        phosphor_decay_s: float = 5.0,
+        parent: QWidget = None,
     ):
         """
         Initialize PPI scope.
@@ -192,7 +195,9 @@ class PPIScope(QWidget):
         self._draw_grid()
 
         # Create sweep line
-        self.sweep_line = pg.PlotCurveItem(pen=pg.mkPen(color=(0, 255, 100, 180), width=2))
+        self.sweep_line = pg.PlotCurveItem(
+            pen=pg.mkPen(color=(0, 255, 100, 180), width=2)
+        )
         self.plot_widget.addItem(self.sweep_line)
 
         # Create scatter plot for blips
@@ -235,7 +240,10 @@ class PPIScope(QWidget):
 
         # Selected target marker (yellow ring)
         self.selected_marker = pg.ScatterPlotItem(
-            size=20, symbol="o", pen=pg.mkPen(color=(255, 200, 0), width=3), brush=pg.mkBrush(None)
+            size=20,
+            symbol="o",
+            pen=pg.mkPen(color=(255, 200, 0), width=3),
+            brush=pg.mkBrush(None),
         )
         self.plot_widget.addItem(self.selected_marker)
 
@@ -264,7 +272,9 @@ class PPIScope(QWidget):
                 theta = np.linspace(0, 2 * np.pi, 100)
                 x = r * np.cos(theta)
                 y = r * np.sin(theta)
-                ring = pg.PlotCurveItem(x, y, pen=pg.mkPen(color=(0, 60, 30, 100), width=1))
+                ring = pg.PlotCurveItem(
+                    x, y, pen=pg.mkPen(color=(0, 60, 30, 100), width=1)
+                )
                 self.plot_widget.addItem(ring)
 
                 # Range labels
@@ -290,7 +300,8 @@ class PPIScope(QWidget):
 
             label = pg.TextItem(text, color=(0, 120, 60), anchor=(0.5, 0.5))
             label.setPos(
-                (self.max_range_km + 8) * np.sin(az_rad), (self.max_range_km + 8) * np.cos(az_rad)
+                (self.max_range_km + 8) * np.sin(az_rad),
+                (self.max_range_km + 8) * np.cos(az_rad),
             )
             label.setFont(QFont("Consolas", 9))
             self.plot_widget.addItem(label)
@@ -314,7 +325,9 @@ class PPIScope(QWidget):
 
         # ═══ ADVANCED SCAN MODE: Use our own sweep angle calculation ═══
         # Calculate time delta for sweep angle update
-        dt = current_time - self.last_update_time if self.last_update_time > 0 else 0.033
+        dt = (
+            current_time - self.last_update_time if self.last_update_time > 0 else 0.033
+        )
 
         # Update sweep angle based on scan mode (CIRCULAR/SECTOR/STARE)
         self.update_sweep_angle(dt)
@@ -401,11 +414,19 @@ class PPIScope(QWidget):
             # Determine affiliation from target name
             name_lower = blip.name.lower() if blip.name else ""
 
-            if "bandit" in name_lower or "hostile" in name_lower or "enemy" in name_lower:
+            if (
+                "bandit" in name_lower
+                or "hostile" in name_lower
+                or "enemy" in name_lower
+            ):
                 # HOSTILE - Red Diamond
                 color = (255, 68, 68, 230)
                 symbol = "d"  # diamond
-            elif "friendly" in name_lower or "allied" in name_lower or "blue" in name_lower:
+            elif (
+                "friendly" in name_lower
+                or "allied" in name_lower
+                or "blue" in name_lower
+            ):
                 # FRIENDLY - Cyan Rectangle
                 color = (0, 191, 255, 230)
                 symbol = "s"  # square
@@ -582,7 +603,9 @@ class PPIScope(QWidget):
         elif self.scan_type == "stare":
             self.current_sweep_angle = np.radians(stare_angle_deg)
 
-        print(f"[SCAN] Mode={scan_type}, Speed={scan_speed_deg_s}°/s, Limits={sector_limits}")
+        print(
+            f"[SCAN] Mode={scan_type}, Speed={scan_speed_deg_s}°/s, Limits={sector_limits}"
+        )
 
     def update_sweep_angle(self, dt: float):
         """
@@ -746,7 +769,9 @@ class PPIScope(QWidget):
             width_rad = np.radians(width_deg)
 
             # Create wedge outline
-            angles = np.linspace(az_rad - width_rad / 2, az_rad + width_rad / 2, n_points)
+            angles = np.linspace(
+                az_rad - width_rad / 2, az_rad + width_rad / 2, n_points
+            )
             x_points = [0] + [self.max_range_km * np.sin(a) for a in angles] + [0]
             y_points = [0] + [self.max_range_km * np.cos(a) for a in angles] + [0]
 

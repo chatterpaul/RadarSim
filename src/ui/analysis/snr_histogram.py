@@ -224,26 +224,34 @@ class SNRHistogramWidget(QWidget):
             self.plot_widget.setLabel("left", "Count")
 
             # Create bar graph item
-            self.bar_graph = pg.BarGraphItem(x=[], height=[], width=1.5, brush="#00aa55")
+            self.bar_graph = pg.BarGraphItem(
+                x=[], height=[], width=1.5, brush="#00aa55"
+            )
             self.plot_widget.addItem(self.bar_graph)
 
             # Add threshold lines
             # Detection threshold (~13 dB typical)
             self.threshold_line = pg.InfiniteLine(
-                pos=13, angle=90, pen=pg.mkPen("#ffff00", width=2, style=Qt.PenStyle.DashLine)
+                pos=13,
+                angle=90,
+                pen=pg.mkPen("#ffff00", width=2, style=Qt.PenStyle.DashLine),
             )
             self.plot_widget.addItem(self.threshold_line)
 
             # Add zone shading
             # Weak zone (red)
             weak_region = pg.LinearRegionItem(
-                values=[self.snr_min, 10], brush=pg.mkBrush(255, 50, 50, 30), movable=False
+                values=[self.snr_min, 10],
+                brush=pg.mkBrush(255, 50, 50, 30),
+                movable=False,
             )
             self.plot_widget.addItem(weak_region)
 
             # Strong zone (green)
             strong_region = pg.LinearRegionItem(
-                values=[20, self.snr_max], brush=pg.mkBrush(0, 255, 100, 30), movable=False
+                values=[20, self.snr_max],
+                brush=pg.mkBrush(0, 255, 100, 30),
+                movable=False,
             )
             self.plot_widget.addItem(strong_region)
 
@@ -294,7 +302,9 @@ class SNRHistogramWidget(QWidget):
         self.mean_label.setText(f"{np.mean(snr_array):.1f} dB")
         self.median_label.setText(f"{np.median(snr_array):.1f} dB")
         self.std_label.setText(f"{np.std(snr_array):.1f} dB")
-        self.minmax_label.setText(f"{np.min(snr_array):.1f} / {np.max(snr_array):.1f} dB")
+        self.minmax_label.setText(
+            f"{np.min(snr_array):.1f} / {np.max(snr_array):.1f} dB"
+        )
 
         # Calculate zone percentages
         weak_pct = np.sum(snr_array < 10) / len(snr_array) * 100

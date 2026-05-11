@@ -54,7 +54,9 @@ class LinearKalmanFilter:
         >>> updated = kf.update(predicted, [1005, 2055])
     """
 
-    def __init__(self, process_noise: float = 1.0, measurement_noise: float = 50.0) -> None:
+    def __init__(
+        self, process_noise: float = 1.0, measurement_noise: float = 50.0
+    ) -> None:
         """
         Initialize Kalman Filter.
 
@@ -97,7 +99,9 @@ class LinearKalmanFilter:
             velocity = (0.0, 0.0)
 
         # State vector [x, y, vx, vy]
-        x = np.array([position[0], position[1], velocity[0], velocity[1]], dtype=np.float64)
+        x = np.array(
+            [position[0], position[1], velocity[0], velocity[1]], dtype=np.float64
+        )
 
         # Initial covariance (diagonal)
         P = np.diag(
@@ -179,7 +183,9 @@ class LinearKalmanFilter:
 
         return KalmanState(x=x_pred, P=P_pred)
 
-    def update(self, state: KalmanState, measurement: Tuple[float, float]) -> KalmanState:
+    def update(
+        self, state: KalmanState, measurement: Tuple[float, float]
+    ) -> KalmanState:
         """
         Update state with measurement.
 

@@ -187,7 +187,9 @@ class RadarWaveforms:
         Reference: Barker, "Group Synchronizing of Binary Digital Systems"
         """
         if length not in BARKER_CODES:
-            raise ValueError(f"Barker code length must be one of {list(BARKER_CODES.keys())}")
+            raise ValueError(
+                f"Barker code length must be one of {list(BARKER_CODES.keys())}"
+            )
 
         code = BARKER_CODES[length]
         samples_per_chip = int(chip_width * sample_rate)
@@ -198,7 +200,9 @@ class RadarWaveforms:
         return waveform
 
     @staticmethod
-    def polyphase_frank(n_phases: int, chip_width: float, sample_rate: float) -> np.ndarray:
+    def polyphase_frank(
+        n_phases: int, chip_width: float, sample_rate: float
+    ) -> np.ndarray:
         """
         Generate Frank polyphase code.
 
@@ -305,7 +309,9 @@ class RadarWaveforms:
         return c / (2 * bandwidth)
 
     @staticmethod
-    def velocity_resolution(wavelength: float, coherent_integration_time: float) -> float:
+    def velocity_resolution(
+        wavelength: float, coherent_integration_time: float
+    ) -> float:
         """
         Calculate velocity resolution.
 
@@ -546,7 +552,9 @@ def validate_cfar_false_alarm_rate(
             "reference_cells": reference_cells,
         },
         "cfar_parameters": {
-            "alpha": 2 * reference_cells * (pfa_target ** (-1.0 / (2 * reference_cells)) - 1),
+            "alpha": 2
+            * reference_cells
+            * (pfa_target ** (-1.0 / (2 * reference_cells)) - 1),
         },
         "computed_values": {
             "n_valid_samples": n_valid,

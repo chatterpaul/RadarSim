@@ -74,11 +74,15 @@ class TestSkolnikExample2_1:
         lambda_m = SPEED_OF_LIGHT / 10e9
         gt = 10 ** (45 / 10)
         gr = 10 ** (45 / 10)
-        expected_pr = (1e6 * gt * gr * lambda_m**2 * 1.0) / ((4 * np.pi) ** 3 * (100e3) ** 4)
+        expected_pr = (1e6 * gt * gr * lambda_m**2 * 1.0) / (
+            (4 * np.pi) ** 3 * (100e3) ** 4
+        )
 
         # Validate within 0.5% error
         relative_error = abs(pr - expected_pr) / expected_pr
-        assert relative_error < 0.005, f"Received power error: {relative_error*100:.2f}%"
+        assert relative_error < 0.005, (
+            f"Received power error: {relative_error * 100:.2f}%"
+        )
 
 
 class TestSkolnikSNRCalculation:
@@ -114,9 +118,9 @@ class TestSkolnikSNRCalculation:
         expected_snr_db = 10 * np.log10(pr / noise_power)
 
         # Should match within 0.5 dB
-        assert (
-            abs(snr_db - expected_snr_db) < 0.5
-        ), f"SNR mismatch: {snr_db:.1f} vs {expected_snr_db:.1f} dB"
+        assert abs(snr_db - expected_snr_db) < 0.5, (
+            f"SNR mismatch: {snr_db:.1f} vs {expected_snr_db:.1f} dB"
+        )
 
 
 class TestITU_R_P676_Validation:
@@ -146,7 +150,9 @@ class TestITU_R_P676_Validation:
         """
         gamma_o = ITU_R_P676.specific_attenuation_oxygen(10.0, 15.0, 1013.25)
 
-        assert gamma_o < 0.02, f"10 GHz oxygen attenuation too high: {gamma_o:.4f} dB/km"
+        assert gamma_o < 0.02, (
+            f"10 GHz oxygen attenuation too high: {gamma_o:.4f} dB/km"
+        )
 
     def test_water_vapor_22ghz(self):
         """
@@ -193,14 +199,17 @@ class TestSwerlingModels:
         """
         mean_rcs = 5.0
         samples = [
-            SwerlingRCS.generate_rcs(mean_rcs, SwerlingModel.SWERLING_1) for _ in range(10000)
+            SwerlingRCS.generate_rcs(mean_rcs, SwerlingModel.SWERLING_1)
+            for _ in range(10000)
         ]
 
         sample_mean = np.mean(samples)
         relative_error = abs(sample_mean - mean_rcs) / mean_rcs
 
         # Allow 5% statistical error
-        assert relative_error < 0.05, f"Swerling 1 mean error: {relative_error*100:.1f}%"
+        assert relative_error < 0.05, (
+            f"Swerling 1 mean error: {relative_error * 100:.1f}%"
+        )
 
     def test_swerling34_chi_squared(self):
         """
@@ -213,17 +222,21 @@ class TestSwerlingModels:
         n_samples = 10000
 
         sw1_samples = [
-            SwerlingRCS.generate_rcs(mean_rcs, SwerlingModel.SWERLING_1) for _ in range(n_samples)
+            SwerlingRCS.generate_rcs(mean_rcs, SwerlingModel.SWERLING_1)
+            for _ in range(n_samples)
         ]
         sw3_samples = [
-            SwerlingRCS.generate_rcs(mean_rcs, SwerlingModel.SWERLING_3) for _ in range(n_samples)
+            SwerlingRCS.generate_rcs(mean_rcs, SwerlingModel.SWERLING_3)
+            for _ in range(n_samples)
         ]
 
         var_sw1 = np.var(sw1_samples)
         var_sw3 = np.var(sw3_samples)
 
         # Swerling 3 should have lower variance
-        assert var_sw3 < var_sw1, "Swerling 3 should have lower variance than Swerling 1"
+        assert var_sw3 < var_sw1, (
+            "Swerling 3 should have lower variance than Swerling 1"
+        )
 
 
 class TestDopplerShift:
@@ -289,7 +302,9 @@ class TestDetectionRange:
         r_max = calculate_detection_range(radar, rcs, min_snr_db=13.0)
 
         # Should be in 50-200 km range for these parameters
-        assert 30e3 < r_max < 250e3, f"Detection range out of expected range: {r_max/1000:.0f} km"
+        assert 30e3 < r_max < 250e3, (
+            f"Detection range out of expected range: {r_max / 1000:.0f} km"
+        )
 
 
 class TestPhysicalConstants:

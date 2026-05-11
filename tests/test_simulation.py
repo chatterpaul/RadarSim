@@ -25,8 +25,18 @@ import pytest
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from src.physics.rcs import SwerlingModel
-from src.simulation.engine import SimulationEngine, validate_detection_logic, validate_linear_motion
-from src.simulation.objects import KinematicState, MotionModel, Radar, SimulationState, Target
+from src.simulation.engine import (
+    SimulationEngine,
+    validate_detection_logic,
+    validate_linear_motion,
+)
+from src.simulation.objects import (
+    KinematicState,
+    MotionModel,
+    Radar,
+    SimulationState,
+    Target,
+)
 
 # =============================================================================
 # TEST 1: Linear Motion (Constant Velocity)
@@ -102,9 +112,9 @@ class TestConstantAcceleration:
         expected_x = 0.5 * 10.0 * 10.0**2
         actual_x = target.position[0]
 
-        assert actual_x == pytest.approx(
-            expected_x, abs=1.0
-        ), f"CA motion failed: expected {expected_x}, got {actual_x}"
+        assert actual_x == pytest.approx(expected_x, abs=1.0), (
+            f"CA motion failed: expected {expected_x}, got {actual_x}"
+        )
 
     def test_ca_velocity_update(self):
         """Velocity should increase with acceleration"""
@@ -144,18 +154,18 @@ class TestDetectionLogic:
         result = validate_detection_logic(close_range_km=10.0, far_range_km=500.0)
 
         # Close target should have high SNR
-        assert result["computed_values"][
-            "close_above_threshold"
-        ], f"Close target should be detected. SNR={result['computed_values']['close_snr_db']:.2f} dB"
+        assert result["computed_values"]["close_above_threshold"], (
+            f"Close target should be detected. SNR={result['computed_values']['close_snr_db']:.2f} dB"
+        )
 
     def test_no_detection_far_range(self):
         """Target at 500 km with 1 m² RCS should not be detected"""
         result = validate_detection_logic(close_range_km=10.0, far_range_km=500.0)
 
         # Far target should have low SNR
-        assert result["computed_values"][
-            "far_below_threshold"
-        ], f"Far target should NOT be detected. SNR={result['computed_values']['far_snr_db']:.2f} dB"
+        assert result["computed_values"]["far_below_threshold"], (
+            f"Far target should NOT be detected. SNR={result['computed_values']['far_snr_db']:.2f} dB"
+        )
 
     def test_validation_passes(self):
         """Both detection conditions should be satisfied"""
@@ -174,7 +184,9 @@ class TestRadarGeometry:
     @pytest.fixture
     def radar(self):
         """Create test radar at origin."""
-        return Radar(radar_id="test", position=np.array([0.0, 0.0, 0.0]), frequency_hz=10e9)
+        return Radar(
+            radar_id="test", position=np.array([0.0, 0.0, 0.0]), frequency_hz=10e9
+        )
 
     def test_range_calculation(self, radar):
         """Range should equal Euclidean distance"""
@@ -289,14 +301,17 @@ class TestKinematicState:
     def test_speed_calculation(self):
         """Speed should be magnitude of velocity"""
         state = KinematicState(
-            position=np.zeros(3), velocity=np.array([3.0, 4.0, 0.0])  # 3-4-5 triangle
+            position=np.zeros(3),
+            velocity=np.array([3.0, 4.0, 0.0]),  # 3-4-5 triangle
         )
 
         assert state.speed == pytest.approx(5.0, abs=0.01)
 
     def test_2d_to_3d_padding(self):
         """2D vectors should be padded to 3D"""
-        state = KinematicState(position=np.array([100.0, 200.0]), velocity=np.array([10.0, 20.0]))
+        state = KinematicState(
+            position=np.array([100.0, 200.0]), velocity=np.array([10.0, 20.0])
+        )
 
         assert len(state.position) == 3
         assert state.position[2] == 0.0

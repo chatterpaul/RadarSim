@@ -285,7 +285,9 @@ class AIDirector:
             # Determine primary attack azimuth
             if blind_zones:
                 center = blind_zones[0].center_xy
-                plan.attack_azimuth_deg = float(np.degrees(np.arctan2(center[1], center[0])))
+                plan.attack_azimuth_deg = float(
+                    np.degrees(np.arctan2(center[1], center[0]))
+                )
 
         return plan
 
@@ -366,7 +368,9 @@ class AIDirector:
         end = np.array([0.0, 0.0])  # Aim for origin
 
         n_waypoints = 10
-        waypoints = [start + (end - start) * t / (n_waypoints - 1) for t in range(n_waypoints)]
+        waypoints = [
+            start + (end - start) * t / (n_waypoints - 1) for t in range(n_waypoints)
+        ]
 
         length = float(np.linalg.norm(end - start))
         return WaypointRoute(

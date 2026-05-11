@@ -171,9 +171,9 @@ class TestMTIDCNull:
         peak_no_mti = np.max(rd_no_mti.data_db)
         suppression_db = peak_no_mti - peak_mti
 
-        assert (
-            suppression_db > 20.0
-        ), f"MTI suppression only {suppression_db:.1f} dB, expected > 20 dB"
+        assert suppression_db > 20.0, (
+            f"MTI suppression only {suppression_db:.1f} dB, expected > 20 dB"
+        )
 
 
 # ═══════════════════════════════════════════════════════════════════
@@ -205,7 +205,9 @@ class TestTargetLocalization:
 
         peak_idx = np.unravel_index(np.argmax(rd.data_db), rd.data_db.shape)
         peak_range = rd.range_axis_m[peak_idx[1]]
-        error_bins = abs(peak_range - target_range_m) / xband_processor.range_resolution_m
+        error_bins = (
+            abs(peak_range - target_range_m) / xband_processor.range_resolution_m
+        )
 
         assert error_bins <= 3.0, (
             f"Range error {error_bins:.2f} bins (max 3.0). "
@@ -231,7 +233,9 @@ class TestTargetLocalization:
         peak_idx = np.unravel_index(np.argmax(rd.data_db), rd.data_db.shape)
         peak_vel = rd.velocity_axis_mps[peak_idx[0]]
         vel_res = (
-            xband_processor.wavelength_m * xband_processor.prf_hz / (2.0 * xband_processor.n_pulses)
+            xband_processor.wavelength_m
+            * xband_processor.prf_hz
+            / (2.0 * xband_processor.n_pulses)
         )
         error_bins = abs(peak_vel - target_vel) / vel_res
 

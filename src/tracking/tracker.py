@@ -189,7 +189,9 @@ class TrackManager:
                     track.state = self.kf.predict(track.state, dt)
 
         # 2. Data association (Nearest-Neighbor with gating)
-        associations, unassigned_detections, unassigned_tracks = self._associate(detections)
+        associations, unassigned_detections, unassigned_tracks = self._associate(
+            detections
+        )
 
         # 3. Update associated tracks
         for track_id, det_idx in associations.items():
@@ -206,7 +208,10 @@ class TrackManager:
             track.misses = 0
 
             # Promote tentative -> confirmed
-            if track.status == TrackStatus.TENTATIVE and track.hits >= self.confirm_hits:
+            if (
+                track.status == TrackStatus.TENTATIVE
+                and track.hits >= self.confirm_hits
+            ):
                 track.status = TrackStatus.CONFIRMED
             elif track.status == TrackStatus.COASTING:
                 track.status = TrackStatus.CONFIRMED
@@ -248,7 +253,9 @@ class TrackManager:
 
         # 6. Remove deleted tracks
         self.tracks = {
-            tid: track for tid, track in self.tracks.items() if track.status != TrackStatus.DELETED
+            tid: track
+            for tid, track in self.tracks.items()
+            if track.status != TrackStatus.DELETED
         }
 
         return list(self.tracks.values())
@@ -269,10 +276,16 @@ class TrackManager:
         assigned_tracks = set()
 
         if not detections or not self.tracks:
-            return (associations, list(range(len(detections))), list(self.tracks.keys()))
+            return (
+                associations,
+                list(range(len(detections))),
+                list(self.tracks.keys()),
+            )
 
         # Build distance matrix
-        track_ids = [tid for tid, t in self.tracks.items() if t.status != TrackStatus.DELETED]
+        track_ids = [
+            tid for tid, t in self.tracks.items() if t.status != TrackStatus.DELETED
+        ]
 
         for track_id in track_ids:
             track = self.tracks[track_id]
@@ -285,7 +298,9 @@ class TrackManager:
                 if det_idx in assigned_detections:
                     continue
 
-                dist = np.sqrt((det[0] - track_pos[0]) ** 2 + (det[1] - track_pos[1]) ** 2)
+                dist = np.sqrt(
+                    (det[0] - track_pos[0]) ** 2 + (det[1] - track_pos[1]) ** 2
+                )
 
                 # Gating
                 if dist < self.gate_distance and dist < min_dist:
@@ -297,13 +312,18 @@ class TrackManager:
                 assigned_detections.add(best_det)
                 assigned_tracks.add(track_id)
 
-        unassigned_detections = [i for i in range(len(detections)) if i not in assigned_detections]
+        unassigned_detections = [
+            i for i in range(len(detections)) if i not in assigned_detections
+        ]
         unassigned_tracks = [tid for tid in track_ids if tid not in assigned_tracks]
 
         return associations, unassigned_detections, unassigned_tracks
 
     def _create_track(
-        self, measurement: Tuple[float, float], detection_data: Optional[List[Dict]], det_idx: int
+        self,
+        measurement: Tuple[float, float],
+        detection_data: Optional[List[Dict]],
+        det_idx: int,
     ) -> Track:
         """Create a new track from unassigned detection."""
         state = self.kf.initialize(measurement)
@@ -384,7 +404,9 @@ class TrackManager:
         """
         if not self.use_ekf or self._ekf is None:
             # Fallback: convert to Cartesian and use standard update
-            cartesian = [(r * np.cos(theta), r * np.sin(theta)) for r, theta in polar_detections]
+            cartesian = [
+                (r * np.cos(theta), r * np.sin(theta)) for r, theta in polar_detections
+            ]
             return self.update(cartesian, dt)
 
         current_time = time.time()
@@ -395,23 +417,34 @@ class TrackManager:
                 track.state = self._ekf.predict(track.state, dt)
 
         # 2. Convert polar to Cartesian for association only
-        cartesian_dets = [(r * np.cos(theta), r * np.sin(theta)) for r, theta in polar_detections]
+        cartesian_dets = [
+            (r * np.cos(theta), r * np.sin(theta)) for r, theta in polar_detections
+        ]
 
         # 3. Data association (in Cartesian space)
-        associations, unassigned_dets, unassigned_tracks = self._associate(cartesian_dets)
+        associations, unassigned_dets, unassigned_tracks = self._associate(
+            cartesian_dets
+        )
 
         # 4. Update associated tracks with polar measurements
         for track_id, det_idx in associations.items():
             track = self.tracks[track_id]
             z_polar = polar_detections[det_idx]
-            snr = snr_values[det_idx] if snr_values and det_idx < len(snr_values) else 20.0
+            snr = (
+                snr_values[det_idx]
+                if snr_values and det_idx < len(snr_values)
+                else 20.0
+            )
 
             track.state = self._ekf.update(track.state, z_polar, snr_db=snr)
             track.last_update = current_time
             track.hits += 1
             track.misses = 0
 
-            if track.status == TrackStatus.TENTATIVE and track.hits >= self.confirm_hits:
+            if (
+                track.status == TrackStatus.TENTATIVE
+                and track.hits >= self.confirm_hits
+            ):
                 track.status = TrackStatus.CONFIRMED
             elif track.status == TrackStatus.COASTING:
                 track.status = TrackStatus.CONFIRMED
@@ -443,6 +476,8 @@ class TrackManager:
             self._next_id += 1
 
         # 7. Remove deleted tracks
-        self.tracks = {tid: t for tid, t in self.tracks.items() if t.status != TrackStatus.DELETED}
+        self.tracks = {
+            tid: t for tid, t in self.tracks.items() if t.status != TrackStatus.DELETED
+        }
 
         return list(self.tracks.values())

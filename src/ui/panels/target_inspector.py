@@ -127,7 +127,9 @@ class TargetInspector(QWidget):
             row_layout.addWidget(name_label)
 
             value_label = QLabel(default)
-            value_label.setStyleSheet("color: #ffcc00; font-size: 12px; font-weight: bold;")
+            value_label.setStyleSheet(
+                "color: #ffcc00; font-size: 12px; font-weight: bold;"
+            )
             value_label.setAlignment(Qt.AlignmentFlag.AlignRight)
             row_layout.addWidget(value_label)
 
@@ -269,7 +271,9 @@ class TargetInspector(QWidget):
         power_layout.addWidget(self.ecm_power_slider)
 
         self.ecm_power_label = QLabel("500 W")
-        self.ecm_power_label.setStyleSheet("color: #ff8800; font-size: 11px; font-weight: bold;")
+        self.ecm_power_label.setStyleSheet(
+            "color: #ff8800; font-size: 11px; font-weight: bold;"
+        )
         self.ecm_power_label.setMinimumWidth(50)
         power_layout.addWidget(self.ecm_power_label)
         layout.addLayout(power_layout)
@@ -360,7 +364,7 @@ class TargetInspector(QWidget):
         # Calculate Pd from SNR (simplified Swerling 1 approximation)
         snr_db = target_data.get("snr_db", 0)
         pd = self._calculate_pd(snr_db)
-        self.labels["Pd"].setText(f"{pd*100:.0f}%")
+        self.labels["Pd"].setText(f"{pd * 100:.0f}%")
 
         # Jammer status - USE USER'S TOGGLE STATE, not target_data
         self._update_jammer_display()
@@ -470,12 +474,14 @@ class TargetInspector(QWidget):
         }
 
         # Run inference
-        icon, class_name, confidence = self._inference_engine.predict_with_icon(track_data)
+        icon, class_name, confidence = self._inference_engine.predict_with_icon(
+            track_data
+        )
 
         # Update display
         self.ai_icon_label.setText(icon)
         self.ai_class_label.setText(class_name.upper())
-        self.ai_confidence_label.setText(f"Confidence: {confidence*100:.1f}%")
+        self.ai_confidence_label.setText(f"Confidence: {confidence * 100:.1f}%")
 
         # Color-code confidence
         if confidence >= 0.8:
@@ -515,7 +521,7 @@ class TargetInspector(QWidget):
     def _on_ecm_power_changed(self, value: int) -> None:
         """Handle ECM power slider change."""
         if value >= 1000:
-            self.ecm_power_label.setText(f"{value/1000:.1f} kW")
+            self.ecm_power_label.setText(f"{value / 1000:.1f} kW")
         else:
             self.ecm_power_label.setText(f"{value} W")
 

@@ -113,12 +113,16 @@ class AnalysisPanel(QWidget):
             self.threshold_line = pg.InfiniteLine(
                 pos=13.0,
                 angle=0,
-                pen=pg.mkPen(color=(255, 100, 100), width=2, style=Qt.PenStyle.DashLine),
+                pen=pg.mkPen(
+                    color=(255, 100, 100), width=2, style=Qt.PenStyle.DashLine
+                ),
             )
             self.snr_plot.addItem(self.threshold_line)
 
             # SNR curve
-            self.snr_curve = self.snr_plot.plot(pen=pg.mkPen(color=(0, 255, 100), width=2))
+            self.snr_curve = self.snr_plot.plot(
+                pen=pg.mkPen(color=(0, 255, 100), width=2)
+            )
 
             # Current time marker
             self.time_marker = pg.InfiniteLine(
@@ -136,13 +140,17 @@ class AnalysisPanel(QWidget):
         if PYQTGRAPH_AVAILABLE:
             self.det_plot = pg.PlotWidget()
             self.det_plot.setBackground("#0a1510")
-            self.det_plot.setTitle("Detection Rate (Rolling)", color="#00aaff", size="12pt")
+            self.det_plot.setTitle(
+                "Detection Rate (Rolling)", color="#00aaff", size="12pt"
+            )
             self.det_plot.setLabel("left", "Rate", units="%", color="#888888")
             self.det_plot.setLabel("bottom", "Time", units="s", color="#888888")
             self.det_plot.showGrid(x=True, y=True, alpha=0.3)
             self.det_plot.setMinimumHeight(150)
 
-            self.det_curve = self.det_plot.plot(pen=pg.mkPen(color=(0, 170, 255), width=2))
+            self.det_curve = self.det_plot.plot(
+                pen=pg.mkPen(color=(0, 170, 255), width=2)
+            )
 
             layout.addWidget(self.det_plot)
 
@@ -245,7 +253,7 @@ class AnalysisPanel(QWidget):
         stats = loader.get_detection_stats()
         self._update_stat(self.stat_duration, self._format_time(stats["duration"]))
         self._update_stat(self.stat_detections, str(stats["total_detections"]))
-        self._update_stat(self.stat_rate, f"{stats['detection_rate']*100:.1f}%")
+        self._update_stat(self.stat_rate, f"{stats['detection_rate'] * 100:.1f}%")
         self._update_stat(self.stat_mean_snr, f"{stats['mean_snr']:.1f} dB")
         self._update_stat(self.stat_max_snr, f"{stats['max_snr']:.1f} dB")
 

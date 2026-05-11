@@ -93,7 +93,9 @@ class ClutterModel:
 
     @staticmethod
     @numba.jit(nopython=True, cache=True)
-    def _k_distribution_samples_jit(mean: float, shape_nu: float, size: int) -> np.ndarray:
+    def _k_distribution_samples_jit(
+        mean: float, shape_nu: float, size: int
+    ) -> np.ndarray:
         """
         JIT-compiled K-distribution samples (compound model).
 
@@ -188,9 +190,13 @@ class ClutterModel:
         sea_state = max(0, min(6, sea_state))
 
         if polarization == "HH":
-            sigma0_db = -50 + 10 * np.log10(sea_state + 0.1) + 25 * np.sin(grazing_angle_rad)
+            sigma0_db = (
+                -50 + 10 * np.log10(sea_state + 0.1) + 25 * np.sin(grazing_angle_rad)
+            )
         else:  # VV
-            sigma0_db = -45 + 10 * np.log10(sea_state + 0.1) + 20 * np.sin(grazing_angle_rad)
+            sigma0_db = (
+                -45 + 10 * np.log10(sea_state + 0.1) + 20 * np.sin(grazing_angle_rad)
+            )
 
         # Frequency adjustment
         sigma0_db += 3 * np.log10(frequency_ghz / 10)
@@ -255,7 +261,9 @@ class ClutterModel:
         return ClutterModel._k_distribution_samples_jit(mean_rcs, shape_nu, size)
 
     @staticmethod
-    def rain_reflectivity_marshall_palmer(rain_rate_mm_hr: float, frequency_ghz: float) -> float:
+    def rain_reflectivity_marshall_palmer(
+        rain_rate_mm_hr: float, frequency_ghz: float
+    ) -> float:
         """
         Rain radar reflectivity using Marshall-Palmer Z-R relationship.
 
@@ -348,7 +356,9 @@ class ClutterModel:
             grazing = max(0.01, grazing)  # Minimum 0.5°
 
             # Get σ0
-            sigma0_db = ClutterModel.ground_clutter_sigma0(grazing, terrain_type, frequency_ghz)
+            sigma0_db = ClutterModel.ground_clutter_sigma0(
+                grazing, terrain_type, frequency_ghz
+            )
 
             # Resolution cell area (approximate)
             cell_area = 100 * 10  # 100m range x 10m cross-range

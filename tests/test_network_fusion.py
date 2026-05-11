@@ -64,9 +64,9 @@ class TestCovarianceIntersection:
 
         tr_fused = np.trace(P_f)
         tr_min = min(np.trace(P1), np.trace(P2))
-        assert (
-            tr_fused <= tr_min + 1e-6
-        ), f"tr(P_fused)={tr_fused:.1f} > min(tr(P1),tr(P2))={tr_min:.1f}"
+        assert tr_fused <= tr_min + 1e-6, (
+            f"tr(P_fused)={tr_fused:.1f} > min(tr(P1),tr(P2))={tr_min:.1f}"
+        )
 
     def test_trace_reduction_full(self):
         """Fused trace ≤ min for full (non-diagonal) covariance."""
@@ -105,7 +105,9 @@ class TestCovarianceIntersection:
         _, P_f, _ = CovarianceIntersection.fuse_two(x1, P1, x2, P2)
 
         eigenvalues = np.linalg.eigvalsh(P_f)
-        assert np.all(eigenvalues > 0), f"Not positive definite: eigenvalues={eigenvalues}"
+        assert np.all(eigenvalues > 0), (
+            f"Not positive definite: eigenvalues={eigenvalues}"
+        )
 
     def test_omega_in_bounds(self):
         """Optimal weight must be ω ∈ (0, 1)."""
@@ -221,7 +223,10 @@ class TestStrobeTriangulation:
             bearing = np.arctan2(jammer_pos[1] - pos[1], jammer_pos[0] - pos[0])
             strobes.append(
                 StrobeReport(
-                    node_id=f"R{i}", radar_position=pos, bearing_rad=bearing, timestamp=0.0
+                    node_id=f"R{i}",
+                    radar_position=pos,
+                    bearing_rad=bearing,
+                    timestamp=0.0,
                 )
             )
 
@@ -249,7 +254,10 @@ class TestStrobeTriangulation:
             bearing += rng.normal(0, np.radians(1.0))  # 1° noise
             strobes.append(
                 StrobeReport(
-                    node_id=f"R{i}", radar_position=pos, bearing_rad=bearing, timestamp=0.0
+                    node_id=f"R{i}",
+                    radar_position=pos,
+                    bearing_rad=bearing,
+                    timestamp=0.0,
                 )
             )
 
@@ -496,7 +504,11 @@ class TestNetworkManager:
             0.0,
         )
         t2 = NetworkTrack(
-            "R2:1", "R2", np.array([25050.0, 14980.0, 98.0, 52.0]), np.diag([150, 100, 15, 10]), 0.0
+            "R2:1",
+            "R2",
+            np.array([25050.0, 14980.0, 98.0, 52.0]),
+            np.diag([150, 100, 15, 10]),
+            0.0,
         )
 
         nm.submit_tracks("R1", [t1], current_time=0.0)
@@ -584,4 +596,6 @@ class TestPerformance:
 
         assert elapsed_ms < 5000, f"Fusion took {elapsed_ms:.0f}ms > 5000ms"
         assert len(fused) >= 100  # At least as many as base tracks
-        print(f"[BENCHMARK] 100 targets × 5 radars: {elapsed_ms:.1f}ms, {len(fused)} fused tracks")
+        print(
+            f"[BENCHMARK] 100 targets × 5 radars: {elapsed_ms:.1f}ms, {len(fused)} fused tracks"
+        )

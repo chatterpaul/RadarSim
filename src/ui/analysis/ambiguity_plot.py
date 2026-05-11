@@ -185,13 +185,17 @@ class AmbiguityPlot(QWidget):
         # Results display
         layout.addWidget(QLabel("Max Unambiguous Range:"), row, 0)
         self.r_max_label = QLabel("-- km")
-        self.r_max_label.setStyleSheet("color: #00ffaa; font-weight: bold; font-size: 14px;")
+        self.r_max_label.setStyleSheet(
+            "color: #00ffaa; font-weight: bold; font-size: 14px;"
+        )
         layout.addWidget(self.r_max_label, row, 1, 1, 2)
         row += 1
 
         layout.addWidget(QLabel("Max Unambiguous Velocity:"), row, 0)
         self.v_max_label = QLabel("-- m/s")
-        self.v_max_label.setStyleSheet("color: #ffaa00; font-weight: bold; font-size: 14px;")
+        self.v_max_label.setStyleSheet(
+            "color: #ffaa00; font-weight: bold; font-size: 14px;"
+        )
         layout.addWidget(self.v_max_label, row, 1, 1, 2)
         row += 1
 
@@ -248,7 +252,9 @@ class AmbiguityPlot(QWidget):
             # Draw initial curves
             self._draw_curves()
         else:
-            fallback = QLabel("PyQtGraph not available.\nInstall with: pip install pyqtgraph")
+            fallback = QLabel(
+                "PyQtGraph not available.\nInstall with: pip install pyqtgraph"
+            )
             fallback.setAlignment(Qt.AlignmentFlag.AlignCenter)
             layout.addWidget(fallback)
 
