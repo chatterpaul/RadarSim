@@ -23,6 +23,17 @@ from datetime import datetime
 from multiprocessing import Pool, cpu_count
 from typing import Dict, List
 
+# Keep status symbols printable in the default Windows console encoding.
+try:
+    _reconfigure = getattr(sys.stdout, "reconfigure", None)
+    if _reconfigure:
+        _reconfigure(encoding="utf-8", errors="replace")
+    _reconfigure = getattr(sys.stderr, "reconfigure", None)
+    if _reconfigure:
+        _reconfigure(encoding="utf-8", errors="replace")
+except Exception:
+    pass
+
 # Try tqdm for progress bar
 try:
     from tqdm import tqdm
